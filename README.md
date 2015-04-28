@@ -1,2 +1,2 @@
-# spatiasql.js
-JavaScript port of spatialite
+# spatiasql
+JavaScript (emscripten) port of [spatialite](https://www.gaia-gis.it/fossil/libspatialite/index)
