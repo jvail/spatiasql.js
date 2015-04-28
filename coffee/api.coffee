@@ -394,7 +394,6 @@ class Database
 	###
 	'export': ->
 		stmt['free']() for _,stmt of @statements
-		spatialite_cleanup_ex @cache
 		@handleError sqlite3_close_v2 @db
 		binaryDb = FS.readFile @filename, encoding:'binary'
 		@handleError sqlite3_open @filename, apiTemp
@@ -414,6 +413,7 @@ class Database
 	###
 	'close': ->
 		stmt['free']() for _,stmt of @statements
+		spatialite_cleanup_ex @cache
 		@handleError sqlite3_close_v2 @db
 		FS.unlink '/' + @filename
 		@db = null
