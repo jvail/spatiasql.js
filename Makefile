@@ -1,4 +1,4 @@
-# run make or make debug|release
+# run make
 # geos and proj *.a seem not to compile very well to JS. Anyway, the recommend way is to use *.so or *.o
 
 PWD=$(shell pwd)
@@ -84,7 +84,7 @@ clean:
 	cd $(PWD)/src/geos; emmake make clean; \
 	cd $(PWD)/src/zlib; emmake make clean; \
 	cd $(PWD)/src/libspatialite; emmake make clean; \
-	rm -f $(PWD)/js/spatiasql.js $(PWD)/js/api.js
+	rm -f $(PWD)/js/spatiasql.js $(PWD)/js/api.js;
 
 
 
