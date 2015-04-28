@@ -557,7 +557,6 @@ Database = (function() {
       stmt = ref[_];
       stmt['free']();
     }
-    spatialite_cleanup_ex(this.cache);
     this.handleError(sqlite3_close_v2(this.db));
     binaryDb = FS.readFile(this.filename, {
       encoding: 'binary'
@@ -587,6 +586,7 @@ Database = (function() {
       stmt = ref[_];
       stmt['free']();
     }
+    spatialite_cleanup_ex(this.cache);
     this.handleError(sqlite3_close_v2(this.db));
     FS.unlink('/' + this.filename);
     return this.db = null;
