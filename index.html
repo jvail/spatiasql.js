@@ -48,7 +48,7 @@
             else
               console.log('open error');
           }
-          pre.html((typeof event.data === 'string' ? event.data : JSON.stringify(event.data, null, 2)));
+          pre.html((typeof event.data === 'string' ? event.data : JSON.stringify(event.data.results, null, 2)));
           button.prop('disabled', false);
         };
 
@@ -71,11 +71,11 @@
         background-color: lightgrey;
       }
       body > div {
-        width: 650px;
+        width: 800px;
         height: 800px;
       }
       pre {
-        width: 650px;
+        width: 800px;
         height: 300px;
         background-color: white;
         border: 1px solid;
@@ -87,7 +87,8 @@
       textarea {
         border: 1px solid;
         border-color: grey;
-        border-radius: 4px;        
+        border-radius: 4px;
+        max-width: 800px;     
       }
       button {
         width: 80px;
@@ -103,19 +104,51 @@
         text-align: center;
         display: block;
         line-height: 200%;
-        font-size: 130%;
+        font-size: 180%;
+        font-family: Georgia, serif;
       }
-
+      a {
+        text-decoration: none;
+        color: steelblue;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body>
     <div class='absolute-center'>
-      <span>spatiasql.js: run SQL queries on <a href='https://www.gaia-gis.it/spatialite-2.3.1/resources.html'>spatialite example db: test-2.3.sqlite</a></span>
-      <textarea rows="20" cols="79">
-SELECT spatialite_version();
---SELECT geos_version();
---SELECT proj4_version();
---SELECT name FROM sqlite_master WHERE type='table';
+      <span><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - Run SQL queries on <a href='https://www.gaia-gis.it/spatialite-2.3.1/resources.html'>spatialite example db</a></span>
+      <textarea rows="20" cols="98">
+SELECT spatialite_version(), proj4_version(), geos_version();
+
+-- a few example queries from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
+
+SELECT name, peoples FROM towns WHERE peoples > 350000 ORDER BY peoples DESC;
+--expect:
+--Name|Peoples
+--Roma|2546804
+--Milano|1256211
+--Napoli|1004500
+--Torino|865263
+--Palermo|686722
+--Genova|610307
+--Bologna|371217
+--Firenze|356118
+
+SELECT HEX(AsBinary(GeomFromText('POINT(10 20)')));
+--expect: 
+--010100000000000000000024400000000000003440
+
+
+SELECT AsText(InteriorRingN(Geometry, 1)),
+  AsText(PointN(InteriorRingN(Geometry, 1), 4)),
+  X(PointN(InteriorRingN(Geometry, 1), 5)),
+  Y(PointN(InteriorRingN(Geometry, 1), 5))
+  FROM Regions WHERE PK_UID = 55;
+
+--expect:
+--LINESTRING(756881.706704 4850692.62625, 760361.595005 4852743.267975, 759582.880944 4855493.610807, 757549.382306 4855414.551183, 755734.189332 4856112.118807, 755020.910885 4855996.887913, 754824.031873 4854723.577451, 756021.000385 4850937.420842, 756881.706704 4850692.62625)|POINT(757549.382306 4855414.551183)|755734.189332257|4856112.11880693
       </textarea>
       <button>...loading...</button>
       <pre></pre>
