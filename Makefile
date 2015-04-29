@@ -79,12 +79,20 @@ js/spatiasql-raw.js: js/api.js exported_functions
 js/api.js: coffee/api.coffee coffee/exports.coffee coffee/api-data.coffee
 	coffee --bare --compile --join $@ --compile $^
 
+# Web worker API
+worker: js/spatiasql.worker.js
+js/worker.js: coffee/worker.coffee
+	coffee --bare --compile --join $@ --compile $^
+
+js/spatiasql.worker.js: js/spatiasql.js js/worker.js
+	cat $^ > $@
+
 clean:
 	cd $(PWD)/src/proj; emmake make clean; \
 	cd $(PWD)/src/geos; emmake make clean; \
 	cd $(PWD)/src/zlib; emmake make clean; \
 	cd $(PWD)/src/libspatialite; emmake make clean; \
-	rm -f $(PWD)/js/spatiasql.js $(PWD)/js/api.js;
+	rm -f $(PWD)/js/spatiasql.js $(PWD)/js/api.js $(PWD)/js/worker.js $(PWD)/js/spatiasql.worker.js;
 
 
 
