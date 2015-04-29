@@ -29,9 +29,9 @@
 
         $('button').on('click', function () {
           var sql = textarea.val().trim();
-          console.log(sql);
           if (sql.length > 0) {
             button.prop('disabled', true);
+            button.html('...running...');
             id++;
             worker.postMessage({
               id: id,
@@ -42,25 +42,27 @@
         });
 
         worker.onmessage = function (event) {
-          if (event.data.id === 1) {
-            if (event.data.ready)
-              button.html('run');              
-            else
-              console.log('open error');
-          }
-          pre.html((typeof event.data === 'string' ? event.data : JSON.stringify(event.data.results, null, 2)));
+          pre.html((typeof event.data === 'string' ? event.data : (
+              event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
+            )
+          ));
           button.prop('disabled', false);
+          button.html('run');              
         };
 
         worker.onerror = function (event) {
-          pre.html('Error: ' + JSON.stringify(event, null, 2));
+          pre.html('Error: ' + event.message);
           button.prop('disabled', false);
+          button.html('run');              
         };
 
       });
     </script>
 
     <style>
+      * {
+        box-sizing: border-box;
+      }
       .absolute-center {
         margin-left: auto;
         margin-right: auto;
@@ -68,7 +70,7 @@
         top: 20; left: 0; bottom: 0; right: 0;
       }
       body {
-        background-color: lightgrey;
+        background-color: #eee;
       }
       body > div {
         width: 800px;
@@ -77,16 +79,18 @@
       pre {
         width: 800px;
         height: 300px;
+        margin: 0px;
+        padding: 2px;
         background-color: white;
-        border: 1px solid;
+        border: 2px solid;
         border-color: grey;
         border-radius: 4px;
         overflow-x: hidden;
         overflow-y: scroll;
       }
       textarea {
-        border: 1px solid;
-        border-color: grey;
+        border: 2px solid;
+        border-color: steelblue;
         border-radius: 4px;
         max-width: 800px;     
         min-width: 800px;     
@@ -95,10 +99,12 @@
         width: 80px;
         height: 30px;
         margin-top: 10px;
+        margin-bottom: 10px;
         display: block;
         border: 1px solid;
         border-color: grey;
         border-radius: 4px;
+        float: right;
       }
       span {
         width: 100%;
@@ -120,8 +126,8 @@
   <body>
     <div class='absolute-center'>
       <span><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - Run SQL queries on <a href='https://www.gaia-gis.it/spatialite-2.3.1/resources.html'>spatialite example db</a></span>
-      <textarea rows="20" cols="98">
-SELECT spatialite_version(), proj4_version(), geos_version();
+      <textarea rows="20" cols="90">
+SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
 
 -- a few example queries from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
 
@@ -151,7 +157,7 @@ SELECT AsText(InteriorRingN(Geometry, 1)),
 --expect:
 --LINESTRING(756881.706704 4850692.62625, 760361.595005 4852743.267975, 759582.880944 4855493.610807, 757549.382306 4855414.551183, 755734.189332 4856112.118807, 755020.910885 4855996.887913, 754824.031873 4854723.577451, 756021.000385 4850937.420842, 756881.706704 4850692.62625)|POINT(757549.382306 4855414.551183)|755734.189332257|4856112.11880693
       </textarea>
-      <button>...loading...</button>
+      <div><button>...loading...</button></div>
       <pre></pre>
     </div>
   </body>
