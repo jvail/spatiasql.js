@@ -1,0 +1,124 @@
+<html>
+  <head>
+    <title>spatiasql.js</title>
+    <meta content="">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script>
+      $(function () {
+
+        // modified example from sql.js
+        var id = 1;
+        var worker = new Worker("spatiasql.worker.js");
+        var textarea = $('textarea');
+        var pre = $('pre');
+        var button = $('button');
+        button.prop('disabled', true);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'test-2.3.sqlite', true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function(e) {
+          var uInt8Array = new Uint8Array(this.response);
+          worker.postMessage({
+              id: id,
+              action: 'open',
+              buffer: uInt8Array
+          });
+        };
+        xhr.send();
+
+        $('button').on('click', function () {
+          var sql = textarea.val().trim();
+          console.log(sql);
+          if (sql.length > 0) {
+            button.prop('disabled', true);
+            id++;
+            worker.postMessage({
+              id: id,
+              action: 'exec',
+              sql: sql
+            });
+          }
+        });
+
+        worker.onmessage = function (event) {
+          if (event.data.id === 1) {
+            if (event.data.ready)
+              button.html('run');              
+            else
+              console.log('open error');
+          }
+          pre.html((typeof event.data === 'string' ? event.data : JSON.stringify(event.data, null, 2)));
+          button.prop('disabled', false);
+        };
+
+        worker.onerror = function (event) {
+          pre.html('Error: ' + JSON.stringify(event, null, 2));
+          button.prop('disabled', false);
+        };
+
+      });
+    </script>
+
+    <style>
+      .absolute-center {
+        margin-left: auto;
+        margin-right: auto;
+        position: absolute;
+        top: 20; left: 0; bottom: 0; right: 0;
+      }
+      body {
+        background-color: lightgrey;
+      }
+      body > div {
+        width: 650px;
+        height: 800px;
+      }
+      pre {
+        width: 650px;
+        height: 300px;
+        background-color: white;
+        border: 1px solid;
+        border-color: grey;
+        border-radius: 4px;
+        overflow-x: hidden;
+        overflow-y: scroll;
+      }
+      textarea {
+        border: 1px solid;
+        border-color: grey;
+        border-radius: 4px;        
+      }
+      button {
+        width: 80px;
+        height: 30px;
+        margin-top: 10px;
+        display: block;
+        border: 1px solid;
+        border-color: grey;
+        border-radius: 4px;
+      }
+      span {
+        width: 100%;
+        text-align: center;
+        display: block;
+        line-height: 200%;
+        font-size: 130%;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class='absolute-center'>
+      <span>spatiasql.js: run SQL queries on <a href='https://www.gaia-gis.it/spatialite-2.3.1/resources.html'>spatialite example db: test-2.3.sqlite</a></span>
+      <textarea rows="20" cols="79">
+SELECT spatialite_version();
+--SELECT geos_version();
+--SELECT proj4_version();
+--SELECT name FROM sqlite_master WHERE type='table';
+      </textarea>
+      <button>...loading...</button>
+      <pre></pre>
+    </div>
+  </body>
+</html>
