@@ -73,8 +73,8 @@ js/spatiasql.js: js/shell-pre.js js/spatiasql-raw.js js/shell-post.js
 	rm -f $(PWD)/js/spatiasql-raw.js
 
 js/spatiasql-raw.js: js/api.js exported_functions
-	EMDEBUG=1 emcc --memory-init-file 0 -O3 -s ALLOW_MEMORY_GROWTH=1 -s LINKABLE=1 -s EXPORTED_FUNCTIONS=@exported_functions \
-	$(BCDIR)/sqlite.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/proj.bc $(BCDIR)/libspatialite.a --post-js js/api.js -o $@
+	EMDEBUG=1 emcc --memory-init-file 0 -O3 -s INLINING_LIMIT=10 -s ALLOW_MEMORY_GROWTH=1 -s EXPORTED_FUNCTIONS=@exported_functions \
+	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/proj.bc $(BCDIR)/libspatialite.a --post-js js/api.js -o $@
 
 js/api.js: coffee/api.coffee coffee/exports.coffee coffee/api-data.coffee
 	coffee --bare --compile --join $@ --compile $^
