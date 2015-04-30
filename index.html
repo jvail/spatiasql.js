@@ -2,9 +2,19 @@
   <head>
     <title>spatiasql.js</title>
     <meta content="">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script>
       $(function () {
+
+        var map = new L.Map('map');
+        var layer = null;
+        map.setView([49.8, 7.8], 9);
+        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
+            maxZoom: 18
+        }).addTo(map);
 
         // modified example from sql.js
         var id = 1;
@@ -42,6 +52,8 @@
         });
 
         worker.onmessage = function (event) {
+          if (event.data.id !== 1)
+            findAndDrawGeoJSON(event.data.results);
           pre.html((typeof event.data === 'string' ? event.data : (
               event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
             )
@@ -55,6 +67,42 @@
           button.prop('disabled', false);
           button.html('run');              
         };
+
+        function findAndDrawGeoJSON (res) { // for: only the first result/query
+
+          if (Array.isArray(res) && res[0].columns.length > 0) {
+
+            var cols = res[0].columns
+              , rows = res[0].values
+              ;
+
+            for (var c = 0, cs = cols.length; c < cs; c++) {
+              if (cols[c].toLowerCase().indexOf('geojson') > 0) {
+                for (var r = 0, rs = cols.length; r < rs; r++) {
+                  try {
+                    var geojson = JSON.parse(rows[r][c]);
+                    if (layer)
+                      map.removeLayer(layer);
+                    layer = L.geoJson(geojson)
+                    layer.addTo(map);
+                    if (geojson.bbox) {
+                      map.fitBounds([
+                        [geojson.bbox[1], geojson.bbox[0]],
+                        [geojson.bbox[3], geojson.bbox[2]]
+                      ]);
+                    }
+                  } catch (e) {
+                    console.log(e);
+                  }
+                  break; // for now: add only the first row
+                }
+              }
+            }
+
+
+          }
+
+        }
 
       });
     </script>
@@ -76,8 +124,17 @@
         width: 800px;
         height: 800px;
       }
+      #map {
+        width: 392px;
+        height: 300px;
+        border: 2px solid;
+        border-color: grey;
+        border-radius: 4px;
+        margin-right: 16px;
+        float: left;
+      }
       pre {
-        width: 800px;
+        width: 392px;
         height: 300px;
         margin: 0px;
         padding: 2px;
@@ -85,7 +142,7 @@
         border: 2px solid;
         border-color: grey;
         border-radius: 4px;
-        overflow-x: hidden;
+        overflow-x: scroll;
         overflow-y: scroll;
       }
       textarea {
@@ -93,12 +150,13 @@
         border-color: steelblue;
         border-radius: 4px;
         max-width: 800px;     
-        min-width: 800px;     
+        min-width: 800px;
+        margin-bottom: 16px;     
       }
       button {
         width: 80px;
         height: 30px;
-        margin-top: 10px;
+        margin-top: 16px;
         margin-bottom: 10px;
         display: block;
         border: 1px solid;
@@ -111,7 +169,7 @@
         text-align: center;
         display: block;
         line-height: 200%;
-        font-size: 180%;
+        font-size: 200%;
         font-family: Georgia, serif;
       }
       a {
@@ -127,11 +185,18 @@
     <div class='absolute-center'>
       <span><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - Run SQL queries on <a href='https://www.gaia-gis.it/spatialite-2.3.1/resources.html'>spatialite example db</a></span>
       <textarea rows="20" cols="90">
-SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
+--SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
+
+-- draw geometry on map by selecting GeoJSON (column name containing 'geojson', with bbox)
+SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 1, 1) FROM towns WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) AND peoples > 50000;
+
+--SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 1, 1) FROM regions;
+
+-- SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 4, 1) FROM highways WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA')) OR Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='LAZIO'));
 
 -- a few example queries from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
 
-SELECT name, peoples FROM towns WHERE peoples > 350000 ORDER BY peoples DESC;
+--SELECT name, peoples FROM towns WHERE peoples > 350000 ORDER BY peoples DESC;
 --expect:
 --Name|Peoples
 --Roma|2546804
@@ -143,22 +208,21 @@ SELECT name, peoples FROM towns WHERE peoples > 350000 ORDER BY peoples DESC;
 --Bologna|371217
 --Firenze|356118
 
-SELECT HEX(AsBinary(GeomFromText('POINT(10 20)')));
+--SELECT HEX(AsBinary(GeomFromText('POINT(10 20)')));
 --expect: 
 --010100000000000000000024400000000000003440
 
 
-SELECT AsText(InteriorRingN(Geometry, 1)),
-  AsText(PointN(InteriorRingN(Geometry, 1), 4)),
-  X(PointN(InteriorRingN(Geometry, 1), 5)),
-  Y(PointN(InteriorRingN(Geometry, 1), 5))
-  FROM Regions WHERE PK_UID = 55;
+--SELECT AsText(InteriorRingN(Geometry, 1)), AsText(PointN(InteriorRingN(Geometry, 1), 4)), X(PointN(InteriorRingN(Geometry, 1), 5)), Y(PointN(InteriorRingN(Geometry, 1), 5)) FROM Regions WHERE PK_UID = 55;
 
 --expect:
 --LINESTRING(756881.706704 4850692.62625, 760361.595005 4852743.267975, 759582.880944 4855493.610807, 757549.382306 4855414.551183, 755734.189332 4856112.118807, 755020.910885 4855996.887913, 754824.031873 4854723.577451, 756021.000385 4850937.420842, 756881.706704 4850692.62625)|POINT(757549.382306 4855414.551183)|755734.189332257|4856112.11880693
       </textarea>
+      <div>
+        <div id='map'></div>
+        <pre></pre>
+      </div>
       <div><button>...loading...</button></div>
-      <pre></pre>
     </div>
   </body>
 </html>
