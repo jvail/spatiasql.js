@@ -3,27 +3,32 @@
     <title>spatiasql.js</title>
     <meta content="">
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <link rel="stylesheet" href="codemirror.css">
     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="codemirror.min.js"></script>
     <script>
       $(function () {
 
-        var map = new L.Map('map');
+        // modified example from sql.js
+        var id = 1;
         var layer = null;
+        var worker = new Worker("spatiasql.worker.js");
+        var textarea = $('#code');
+        var pre = $('#res');
+        var runBtn = $('#run');
+        var clearBtn = $('#clear');
+        var input = $('input[type=file]');
+        var editor = CodeMirror.fromTextArea(textarea.get(0), { 
+          mode: 'text/x-sql',
+          keyMap: 'sublime'
+        });
+        var map = new L.Map('map');
         map.setView([49.8, 7.8], 9);
         L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
             maxZoom: 18
         }).addTo(map);
-
-        // modified example from sql.js
-        var id = 1;
-        var worker = new Worker("spatiasql.worker.js");
-        var textarea = $('textarea');
-        var pre = $('pre');
-        var runBtn = $('#run');
-        var clearBtn = $('#clear');
-        var input = $('input');
 
         runBtn.prop('disabled', true);
         input.prop('disabled', true);
@@ -42,7 +47,7 @@
         xhr.send();
 
         runBtn.on('click', function () {
-          var sql = textarea.val().trim();
+          var sql = editor.getValue();
           if (sql.length > 0) {
             runBtn.prop('disabled', true);
             runBtn.html('...running...');
@@ -68,7 +73,7 @@
           var reader = new FileReader();
           reader.onload = function () {
             pre.html('');
-            id++
+            id = 1;
             worker.postMessage({
               id: id,
               action: 'open',
@@ -85,7 +90,7 @@
         });
 
         worker.onmessage = function (event) {
-          if (event.data.id !== 1) {
+          if (event.data.id > 1) {
             findAndDrawGeoJSON(event.data.results);
             pre.prepend('\n');
             pre.prepend((typeof event.data === 'string' ? event.data : (
@@ -207,7 +212,7 @@
         margin-right: 16px;
         float: left;
       }
-      pre {
+      #res {
         width: 392px;
         height: 300px;
         margin: 0px;
@@ -219,7 +224,7 @@
         overflow-x: scroll;
         overflow-y: scroll;
       }
-      textarea {
+      .CodeMirror {
         border: 2px solid;
         border-color: steelblue;
         border-radius: 4px;
@@ -227,7 +232,7 @@
         min-width: 800px;
         margin-bottom: 16px;     
       }
-      button {
+      #run, #clear {
         width: 80px;
         height: 30px;
         margin-top: 16px;
@@ -238,7 +243,7 @@
         border-radius: 4px;
         float: right;
       }
-      span {
+      #title {
         width: 100%;
         text-align: center;
         display: block;
@@ -246,14 +251,14 @@
         font-size: 200%;
         font-family: Georgia, serif;
       }
-      a {
+      #title > a {
         text-decoration: none;
         color: steelblue;
       }
-      a:hover {
+      title > a:hover {
         text-decoration: underline;
       }
-      input {
+      input[type='file']  {
         float: left;
         margin-top: 16px;
         margin-bottom: 10px;
@@ -266,44 +271,30 @@
   </head>
   <body>
     <div class='absolute-center'>
-      <span><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file.</span>
-      <textarea rows="20" cols="90">
---SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
+      <span id='title'><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file.</span>
+      <textarea  id='code' name='code' rows="20" cols="90">
+-- sample db from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
+
+-- SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
 
 -- draw geometry on map by naming a column 'geojson'
-SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson FROM towns WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) AND peoples > 50000;
+SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson 
+FROM towns 
+WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) 
+AND peoples > 50000;
 
---SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON FROM regions;
+/*
+SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON 
+FROM regions;
 
--- SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON FROM highways WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA')) OR Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='LAZIO'));
-
--- a few example queries from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
-
---SELECT name, peoples FROM towns WHERE peoples > 350000 ORDER BY peoples DESC;
---expect:
---Name|Peoples
---Roma|2546804
---Milano|1256211
---Napoli|1004500
---Torino|865263
---Palermo|686722
---Genova|610307
---Bologna|371217
---Firenze|356118
-
---SELECT HEX(AsBinary(GeomFromText('POINT(10 20)')));
---expect: 
---010100000000000000000024400000000000003440
-
-
---SELECT AsText(InteriorRingN(Geometry, 1)), AsText(PointN(InteriorRingN(Geometry, 1), 4)), X(PointN(InteriorRingN(Geometry, 1), 5)), Y(PointN(InteriorRingN(Geometry, 1), 5)) FROM Regions WHERE PK_UID = 55;
-
---expect:
---LINESTRING(756881.706704 4850692.62625, 760361.595005 4852743.267975, 759582.880944 4855493.610807, 757549.382306 4855414.551183, 755734.189332 4856112.118807, 755020.910885 4855996.887913, 754824.031873 4854723.577451, 756021.000385 4850937.420842, 756881.706704 4850692.62625)|POINT(757549.382306 4855414.551183)|755734.189332257|4856112.11880693
-      </textarea>
+SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON 
+FROM highways 
+WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA' oR name='LAZIO'));
+*/
+        </textarea>
       <div>
         <div id='map'></div>
-        <pre></pre>
+        <pre id='res'></pre>
       </div>
       <div>
         <input type='file'>
@@ -311,5 +302,27 @@ SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson FR
         <button id='clear'>clear</button>
       </div>
     </div>
+<script>
+// window.onload = function() {
+//   var mime = 'text/x-mariadb';
+//   // get mime type
+//   if (window.location.href.indexOf('mime=') > -1) {
+//     mime = window.location.href.substr(window.location.href.indexOf('mime=') + 5);
+//   }
+//   window.editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+//     mode: 'text/x-mariadb',
+//     indentWithTabs: true,
+//     smartIndent: true,
+//     lineNumbers: true,
+//     matchBrackets : true,
+//     autofocus: true,
+//     extraKeys: {"Ctrl-Space": "autocomplete"},
+//     hintOptions: {tables: {
+//       users: {name: null, score: null, birthDate: null},
+//       countries: {name: null, population: null, size: null}
+//     }}
+//   });
+// };
+</script>
   </body>
 </html>
