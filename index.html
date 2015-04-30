@@ -60,15 +60,23 @@
         });
 
         worker.onmessage = function (event) {
-          if (event.data.id !== 1)
+          if (event.data.id !== 1) {
             findAndDrawGeoJSON(event.data.results);
-          pre.prepend('\n');
-          pre.prepend((typeof event.data === 'string' ? event.data : (
-              event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
-            )
-          ));
-          runBtn.prop('disabled', false);
-          runBtn.html('run');              
+            pre.prepend('\n');
+            pre.prepend((typeof event.data === 'string' ? event.data : (
+                event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
+              )
+            ));
+            runBtn.prop('disabled', false);
+            runBtn.html('run');              
+          } else {
+            id++
+            worker.postMessage({
+              id: id,
+              action: 'exec',
+              sql: 'SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version()'
+            });
+          }
         };
 
         worker.onerror = function (event) {
@@ -78,40 +86,66 @@
           runBtn.html('run');              
         };
 
-        function findAndDrawGeoJSON (res) { // for: only the first result/query
+        function findAndDrawGeoJSON (res) {
 
-          if (Array.isArray(res) && res[0].columns.length > 0) {
+          if (Array.isArray(res)) {
 
-            var cols = res[0].columns
-              , rows = res[0].values
-              ;
+            var features = [];
 
-            for (var c = 0, cs = cols.length; c < cs; c++) {
-              if (cols[c].toLowerCase().indexOf('geojson') > 0) {
-                for (var r = 0, rs = cols.length; r < rs; r++) {
-                  try {
-                    var geojson = JSON.parse(rows[r][c]);
-                    if (layer)
-                      map.removeLayer(layer);
-                    layer = L.geoJson(geojson)
-                    layer.addTo(map);
-                    if (geojson.bbox) {
-                      map.fitBounds([
-                        [geojson.bbox[1], geojson.bbox[0]],
-                        [geojson.bbox[3], geojson.bbox[2]]
-                      ]);
+            for (var q = 0, qs = res.length; q < qs; q++) {
+              
+              var cols = res[q].columns
+                , rows = res[q].values
+                ;
+
+              if (res[q].columns.length == 0)
+                continue;
+
+              for (var c = 0, cs = cols.length; c < cs; c++) {
+                if (cols[c].toLowerCase() === 'geojson') {
+                  for (var r = 0, rs = rows.length; r < rs; r++) {
+                    try {
+                      var geojson = JSON.parse(rows[r][c]);
+                      var feature = {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: geojson
+                      };
+                      rows[r].forEach(function (column, index) {
+                        if (index !== c)
+                          feature.properties[cols[index]] = column;
+                      });
+                      rows[r][c] = geojson; // nicer to render in pre
+                      features.push(feature);
+                    } catch (e) {
+                      console.log(e);
+                      pre.prepend('Error: ' + e.message + '\n');
                     }
-                  } catch (e) {
-                    console.log(e);
                   }
-                  break; // for now: add only the first row
                 }
+              }
+
+            }
+
+            if (features.length > 0) {
+              if (layer)
+                map.removeLayer(layer);
+              layer = L.geoJson(features, {
+                onEachFeature: function onEachFeature(feature, layer) {
+                  layer.bindPopup(JSON.stringify(feature.properties, null, 2));
+                }
+              });
+              layer.addTo(map);
+              if (features[0].geometry.bbox) {
+                map.fitBounds(layer.getBounds());
+                // map.fitBounds([
+                //   [features[0].geometry.bbox[1], features[0].geometry.bbox[0]],
+                //   [features[0].geometry.bbox[3], features[0].geometry.bbox[2]]
+                // ]);
               }
             }
 
-
           }
-
         }
 
       });
@@ -198,12 +232,12 @@
       <textarea rows="20" cols="90">
 --SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
 
--- draw geometry on map by selecting GeoJSON (column name containing 'geojson', with bbox)
-SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 1, 1) FROM towns WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) AND peoples > 50000;
+-- draw geometry on map by naming a column 'geojson'
+SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson FROM towns WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) AND peoples > 50000;
 
---SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 1, 1) FROM regions;
+--SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON FROM regions;
 
--- SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 4, 1) FROM highways WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA')) OR Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='LAZIO'));
+-- SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON FROM highways WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA')) OR Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='LAZIO'));
 
 -- a few example queries from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
 
