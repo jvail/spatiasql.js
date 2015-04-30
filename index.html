@@ -21,8 +21,10 @@
         var worker = new Worker("spatiasql.worker.js");
         var textarea = $('textarea');
         var pre = $('pre');
-        var button = $('button');
-        button.prop('disabled', true);
+        var runBtn = $('#run');
+        var clearBtn = $('#clear');
+
+        runBtn.prop('disabled', true);
 
         var xhr = new XMLHttpRequest();
         xhr.open('GET', 'test-2.3.sqlite', true);
@@ -37,11 +39,11 @@
         };
         xhr.send();
 
-        $('button').on('click', function () {
+        runBtn.on('click', function () {
           var sql = textarea.val().trim();
           if (sql.length > 0) {
-            button.prop('disabled', true);
-            button.html('...running...');
+            runBtn.prop('disabled', true);
+            runBtn.html('...running...');
             id++;
             worker.postMessage({
               id: id,
@@ -51,21 +53,29 @@
           }
         });
 
+        clearBtn.on('click', function () {
+          pre.html('');
+          if (layer)
+            map.removeLayer(layer);
+        });
+
         worker.onmessage = function (event) {
           if (event.data.id !== 1)
             findAndDrawGeoJSON(event.data.results);
-          pre.html((typeof event.data === 'string' ? event.data : (
+          pre.prepend('\n');
+          pre.prepend((typeof event.data === 'string' ? event.data : (
               event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
             )
           ));
-          button.prop('disabled', false);
-          button.html('run');              
+          runBtn.prop('disabled', false);
+          runBtn.html('run');              
         };
 
         worker.onerror = function (event) {
-          pre.html('Error: ' + event.message);
-          button.prop('disabled', false);
-          button.html('run');              
+          pre.prepend('\n');
+          pre.prepend('Error: ' + event.message);
+          runBtn.prop('disabled', false);
+          runBtn.html('run');              
         };
 
         function findAndDrawGeoJSON (res) { // for: only the first result/query
@@ -158,6 +168,7 @@
         height: 30px;
         margin-top: 16px;
         margin-bottom: 10px;
+        margin-left: 16px;
         display: block;
         border: 1px solid;
         border-color: grey;
@@ -222,7 +233,8 @@ SELECT AsGeoJSON(Transform(Collect(geometry), 4326), 1, 1) FROM towns WHERE With
         <div id='map'></div>
         <pre></pre>
       </div>
-      <div><button>...loading...</button></div>
+      <div><button id='run'>...loading...</button></div>
+      <div><button id='clear'>clear</button></div>
     </div>
   </body>
 </html>
