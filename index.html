@@ -111,9 +111,13 @@
                         properties: {},
                         geometry: geojson
                       };
-                      rows[r].forEach(function (column, index) {
-                        if (index !== c)
-                          feature.properties[cols[index]] = column;
+                      rows[r].forEach(function (data, index) {
+                        if (index !== c) {
+                          if (typeof data === 'number')
+                            feature.properties[cols[index]] = data.toFixed(2);
+                          else if (typeof data === 'string')
+                            feature.properties[cols[index]] = (data.length > 20 ? data.substr(0, 20) + '..' : data);
+                        }
                       });
                       rows[r][c] = geojson; // nicer to render in pre
                       features.push(feature);
