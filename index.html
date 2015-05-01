@@ -12,9 +12,11 @@
 
         // modified example from sql.js
         var id = 1;
+        var start = Date.now();
         var layer = null;
         var worker = new Worker("spatiasql.worker.js");
         var textarea = $('#code');
+        var time = $('#time');
         var pre = $('#res');
         var runBtn = $('#run');
         var clearBtn = $('#clear');
@@ -52,6 +54,7 @@
             runBtn.prop('disabled', true);
             runBtn.html('...running...');
             id++;
+            start = Date.now();
             worker.postMessage({
               id: id,
               action: 'exec',
@@ -91,6 +94,7 @@
 
         worker.onmessage = function (event) {
           if (event.data.id > 1) {
+            time.html(((Date.now() - start) / 1000).toFixed(3) + ' sec');
             findAndDrawGeoJSON(event.data.results);
             pre.prepend('\n');
             pre.prepend((typeof event.data === 'string' ? event.data : (
@@ -243,6 +247,15 @@
         border-radius: 4px;
         float: right;
       }
+      #time {
+        margin-top: 16px;
+        margin-bottom: 10px;
+        margin-left: 16px;        
+        float: right;
+        height: 30px;
+        vertical-align: middle;
+        line-height: 30px;
+      }
       #title {
         width: 100%;
         text-align: center;
@@ -300,6 +313,7 @@ WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA
         <input type='file'>
         <button id='run'>...loading...</button>
         <button id='clear'>clear</button>
+        <span id='time'></span>
       </div>
     </div>
 <script>
