@@ -76,7 +76,7 @@
           var reader = new FileReader();
           reader.onload = function () {
             pre.html('');
-            id++;
+            id = 1;
             worker.postMessage({
               id: id,
               action: 'open',
@@ -93,7 +93,7 @@
         });
 
         worker.onmessage = function (event) {
-          if (event.data.id > 1 && event.data.results) {
+          if (event.data.id > 1) {
             time.html(((Date.now() - start) / 1000).toFixed(3) + ' sec');
             findAndDrawGeoJSON(event.data.results);
             pre.prepend('\n');
@@ -109,7 +109,7 @@
             worker.postMessage({
               id: id,
               action: 'exec',
-              sql: editor.getValue()
+              sql: 'SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version()'
             });
           }
         };
@@ -295,8 +295,6 @@ SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson
 FROM towns 
 WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) 
 AND peoples > 50000;
-
-SELECT  AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS geojson FROM regions WHERE name='TOSCANA';
 
 /*
 SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON 
