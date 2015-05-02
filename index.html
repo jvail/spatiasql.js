@@ -197,22 +197,24 @@
       * {
         box-sizing: border-box;
       }
+      body {
+        background-color: #eee;
+        font-size: 14px;
+        font-family:"Helvetica Neue", Arial, Helvetica, sans-serif;
+      }
       .absolute-center {
         margin-left: auto;
         margin-right: auto;
         position: absolute;
         top: 0; left: 0; bottom: 0; right: 0;
       }
-      body {
-        background-color: #eee;
-      }
       body > div {
-        width: 800px;
-        height: 800px;
+        width: 65%;
+        height: 85%;
       }
       #map {
-        width: 392px;
-        height: 300px;
+        width: calc(50% - 8px);
+        height: calc(50% - 38px);
         border: 2px solid;
         border-color: grey;
         border-radius: 4px;
@@ -220,8 +222,8 @@
         float: left;
       }
       #res {
-        width: 392px;
-        height: 300px;
+        width: calc(50% - 8px);
+        height: calc(50% - 38px);
         margin: 0px;
         padding: 2px;
         background-color: white;
@@ -232,11 +234,11 @@
         overflow-y: scroll;
       }
       .CodeMirror {
+        width: 100%;
+        height: calc(50% - 38px);     
         border: 2px solid;
         border-color: steelblue;
         border-radius: 4px;
-        max-width: 800px;     
-        min-width: 800px;
         margin-bottom: 16px;     
       }
       #run, #clear {
@@ -263,9 +265,10 @@
         width: 100%;
         text-align: center;
         display: block;
-        line-height: 200%;
+        line-height: 120%;
         font-size: 200%;
         font-family: Georgia, serif;
+        margin: 16px;
       }
       #title > a {
         text-decoration: none;
@@ -287,7 +290,7 @@
   </head>
   <body>
     <div class='absolute-center'>
-      <span id='title'><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file.</span>
+      <span id='title'><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file (SpatiaLite or <a href="http://www.geopackage.org/#sampledata">GeoPackage</a>).</span>
       <textarea  id='code' name='code' rows="20" cols="90">
 -- sample db from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
 
