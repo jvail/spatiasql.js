@@ -70,26 +70,29 @@
         });
 
         input.on('change', function () {
-          runBtn.prop('disabled', true);
-          input.prop('disabled', true);
-          runBtn.html('...loading...');
-          var reader = new FileReader();
-          reader.onload = function () {
-            pre.html('');
-            id = 1;
-            worker.postMessage({
-              id: id,
-              action: 'open',
-              buffer: new Uint8Array(reader.result)
-            });
-            id++
-            worker.postMessage({
+          var file = input.get(0).files.item(0);
+          if (file) {
+            var reader = new FileReader();
+            runBtn.prop('disabled', true);
+            input.prop('disabled', true);
+            runBtn.html('...loading...');
+            reader.onload = function () {
+              pre.html('');
+              id = 1;
+              worker.postMessage({
                 id: id,
-                action: 'exec',
-                sql: 'SELECT name FROM sqlite_master WHERE type="table"'
-            });
+                action: 'open',
+                buffer: new Uint8Array(reader.result)
+              });
+              id++
+              worker.postMessage({
+                  id: id,
+                  action: 'exec',
+                  sql: 'SELECT name FROM sqlite_master WHERE type="table"'
+              });
+            }
+            reader.readAsArrayBuffer(file);
           }
-          reader.readAsArrayBuffer(input.get(0).files.item(0));
         });
 
         worker.onmessage = function (event) {
@@ -175,13 +178,13 @@
                 }
               });
               layer.addTo(map);
-              if (features[0].geometry.bbox) {
-                map.fitBounds(layer.getBounds());
-                // map.fitBounds([
-                //   [features[0].geometry.bbox[1], features[0].geometry.bbox[0]],
-                //   [features[0].geometry.bbox[3], features[0].geometry.bbox[2]]
-                // ]);
-              }
+              map.fitBounds(layer.getBounds());
+              // if (features[0].geometry.bbox) {
+              //   map.fitBounds([
+              //     [features[0].geometry.bbox[1], features[0].geometry.bbox[0]],
+              //     [features[0].geometry.bbox[3], features[0].geometry.bbox[2]]
+              //   ]);
+              // }
             }
 
           }
