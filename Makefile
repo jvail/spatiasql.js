@@ -3,6 +3,7 @@
 
 EMCC_FLAGS :=
 EMCC_FLAGS += -s INLINING_LIMIT=50
+EMCC_FLAGS += -s DISABLE_EXCEPTION_CATCHING=0
 # https://github.com/jsmess/jsmess/blob/master/makefile
 # EMCC_FLAGS += -s TOTAL_MEMORY=16777216      # 16mb
 # EMCC_FLAGS += -s TOTAL_MEMORY=33554432      # 32mb
