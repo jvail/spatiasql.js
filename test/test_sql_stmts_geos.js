@@ -50,8 +50,13 @@ for (var i = 0, is = testcases.length; i < is; i++) {
 		var title = lines[0];
 
 		if (lines[1].substr(0, (lines[1].indexOf('#') < 0 ? lines[1].length : lines[1].indexOf('#'))).trim() !== db_name) {
+			console.log(lines[1].substr(0, (lines[1].indexOf('#') < 0 ? lines[1].length : lines[1].indexOf('#'))).trim());
 
-			if (lines[1].indexOf(':memory:') < 0) {
+			if (lines[1].indexOf('NEW:memory:') > -1) {
+				db = new SQL.Database()
+				dbs[':memory:'+i] = db;
+				db_name = ':memory:'+i;
+			} else if (lines[1].indexOf(':memory:') < 0) {
 				db_name = lines[1].substr(0, (lines[1].indexOf('#') < 0 ? lines[1].length : lines[1].indexOf('#'))).trim();
 				if (!dbs[db_name]) {
 					db = new SQL.Database(fs.readFileSync(db_name));
@@ -65,8 +70,10 @@ for (var i = 0, is = testcases.length; i < is; i++) {
 
 		}
 
+		console.log(db_name);
+
 		var stmt = lines[2];
-		var rows = Number(lines[3].split(' ')[0]);
+		var rows = Number(lines[3].split(' ')[0]); // fix no. rows
 		var cols = Number(lines[4].split(' ')[0]);
 		var expect = lines.slice(5 + cols);
 		// console.log(stmt);
