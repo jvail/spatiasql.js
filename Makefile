@@ -24,24 +24,24 @@ proj:
 	emconfigure ./configure $(PREFIX) --without-mutex --host=none-none-none; \
 	emmake make install; \
 	rm -f $(PWD)/src/proj/src/cs2cs.o $(PWD)/src/proj/src/geod.o $(PWD)/src/proj/src/nad2bin.o ./src/proj.o; # remove files for executables \ 
-	find $(PWD)/src/proj/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O3 -o $(PWD)/src/install_bc/lib/proj.bc # join all .o files
+	find $(PWD)/src/proj/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O2 -o $(PWD)/src/install_bc/lib/proj.bc # join all .o files
 
 geos:
 	cd $(PWD)/src/geos; \
 	emconfigure ./configure $(PREFIX) --host=none-none-none; \
 	emmake make install; \
-	find $(PWD)/src/geos/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O3 -o $(PWD)/src/install_bc/lib/geos.bc # join all .o files \
-	find $(PWD)/src/geos/capi -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O3 -o $(PWD)/src/install_bc/lib/geos_c.bc # join all .o files
+	find $(PWD)/src/geos/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O2 -o $(PWD)/src/install_bc/lib/geos.bc # join all .o files \
+	find $(PWD)/src/geos/capi -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O2 -o $(PWD)/src/install_bc/lib/geos_c.bc # join all .o files
 
 # could not figure out if it is possible to get rid of zlib
 zlib:
 	cd $(PWD)/src/zlib; \
 	emconfigure ./configure --static $(PREFIX); \
 	EMDEBUG=1 emmake make install; \
-	find $(PWD)/src/zlib -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O3 -o $(PWD)/src/install_bc/lib/zlib.bc # join all .o files
+	find $(PWD)/src/zlib -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -O2 -o $(PWD)/src/install_bc/lib/zlib.bc # join all .o files
 
 sqlite:
-	EMDEBUG=1 emcc -O3 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_INT64_TYPE="long long int" -DSQLITE_THREADSAFE=0 \
+	EMDEBUG=1 emcc -O2 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_INT64_TYPE="long long int" -DSQLITE_THREADSAFE=0 \
 	$(PWD)/src/sqlite-amalgamation/sqlite3.c \
 	-o $(PWD)/src/install_bc/lib/sqlite.bc
 
@@ -78,7 +78,7 @@ spatialite:
 	--disable-gcov \
 	--disable-examples \
 	--disable-iconv ; \
-	EMDEBUG=1 emmake make install EMCC_CFLAGS="-O3"
+	EMDEBUG=1 emmake make install EMCC_CFLAGS="-O2"
 
 js/spatiasql.js: js/shell-pre.js js/spatiasql-raw.js js/shell-post.js
 	cat $^ > $@; \
