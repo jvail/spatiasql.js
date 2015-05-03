@@ -1,11 +1,11 @@
-// ported from http://www.gaia-gis.it/gaia-sins/splite-doxy-4.2.0/demo4_8c-example.html
-// node v0.12: node --max-old-space-size=8192 test_spatialindex.js
+// modified example from http://www.gaia-gis.it/gaia-sins/splite-doxy-4.2.0/demo4_8c-example.html
 var fs = require('fs');
 var SQL = require('../js/spatiasql');
 // var filebuffer = fs.readFileSync('sql_stmt_tests/testdb1.sqlite');
 var db = new SQL.Database();
 var result = null;
 var count = 0;
+var start = Date.now();
 
 db.exec("SELECT InitSpatialMetadata(1)");
 db.exec("CREATE TABLE test (PK INTEGER NOT NULL PRIMARY KEY)");
@@ -15,14 +15,15 @@ db.exec("BEGIN");
 
 var stmt = db.prepare("INSERT INTO test (pk, geom) SELECT $pk, MakePoint($x, $y, $srid)");
 var ix, iy, t0 = Date.now(), t1, pk = 0;
+console.log("inserting 250000 rows");
 
-for (ix = 0; ix < 1000; ix++) {
+for (ix = 0; ix < 500; ix++) {
   x = 1000000.0 + (ix * 10.0);
-  for (iy = 0; iy < 1000; iy++) {
-    /* this double loop will insert 1 million rows into the the test table */
+  for (iy = 0; iy < 500; iy++) {
+    /* this double loop will insert 250 k rows into the the test table */
     y = 4000000.0 + (iy * 10.0);
     pk++;
-    if ((pk % 25000) == 0) {
+    if ((pk % 10000) == 0) {
       t1 = Date.now();
       console.log('insert row: '+pk+'\t[elapsed time: '+((t1 - t0) / 1000)+']');
       t0 = Date.now();
@@ -63,3 +64,4 @@ for (ix = 0; ix < 3; ix++) {
 
 db.close();
 
+console.log("[elapsed time: "+((Date.now() - start) / 1000)+']');
