@@ -158,7 +158,8 @@
                         }
                       });
                       rows[r][c] = geojson; // nicer to render in pre
-                      features.push(feature);
+                      if (feature.geometry)
+                        features.push(feature);
                     } catch (e) {
                       console.log(e);
                       pre.prepend('Error: ' + e.message + '\n');
