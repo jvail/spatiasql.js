@@ -10,12 +10,12 @@ var db_memory = new SQL.Database();
 
 console.log(JSON.stringify(db_memory.exec("SELECT InitSpatialMetaData()"), null, 2));
 
-var testcases = fs.readdirSync('sql_stmt_tests');
+var testcases = fs.readdirSync('sql_stmt_proj_tests');
 for (var i = 0, is = testcases.length; i < is; i++) {
 
-  if (testcases[i].indexOf('.testcase') < 0 || !fs.lstatSync('sql_stmt_tests/' + testcases[i]).isFile())
+  if (testcases[i].indexOf('.testcase') < 0 || !fs.lstatSync('sql_stmt_proj_tests/' + testcases[i]).isFile())
     continue;
-  var testcase = fs.readFileSync('sql_stmt_tests/' + testcases[i], { encoding: 'utf-8' });
+  var testcase = fs.readFileSync('sql_stmt_proj_tests/' + testcases[i], { encoding: 'utf-8' });
   if (testcase.length > 0) {
     noCases++;
     console.log('\n\nfile: ' + testcases[i]);
