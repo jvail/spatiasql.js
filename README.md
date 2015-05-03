@@ -1,7 +1,8 @@
 # spatiasql.js
-**Experimental\*** JavaScript (emscripten) port of [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index)
 
-\*all sql_stmt.. tests (geos, proj, geopackage) pass
+Experimental\* JavaScript (emscripten) port of [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index)
+
+\*_all sql_stmt.. tests (geos, proj, geopackage) pass_
 
 ##Demo
 A little web-worker demo is available from here: http://jvail.github.io/spatiasql.js/
