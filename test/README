@@ -1,3 +1,3 @@
 All tests and data from https://www.gaia-gis.it/fossil/libspatialite/index
 
-usage: node test\*.js
+usage: node test_*.js
