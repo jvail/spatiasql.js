@@ -1,4 +1,5 @@
 // ported from http://www.gaia-gis.it/gaia-sins/splite-doxy-4.2.0/demo4_8c-example.html
+// node v0.12: node --max-old-space-size=8192 test_spatialindex.js
 var fs = require('fs');
 var SQL = require('../js/spatiasql');
 // var filebuffer = fs.readFileSync('sql_stmt_tests/testdb1.sqlite');
