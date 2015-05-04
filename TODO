@@ -2,6 +2,7 @@
 - fix --memory-init-file 1 in Makefile
 - remove c/c++ sources from repo  (use wget?)
 - fix: TypeError: asm.js type error: exported function name '_pj_cvsid205' not found (firefox)
+- fix precision check in sql_stmt tests
 
 - is it possible to compile without zlib?
 - is it possible to compile without DISABLE_EXCEPTION_CATCHING=0 (better performance) and still return null on e.g. geos errors?
