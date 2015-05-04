@@ -238,14 +238,15 @@ class Database
 	# Open a new database either by creating a new one or opening an existing one,
 	# stored in the byte array passed in first argument
 	# @param data [Array<Integer>] An array of bytes representing an SQLite database file
-	constructor: (data) ->
+	# @param verbose [Integer] If true a short start-up message is printed to console
+	constructor: (data, verbose) ->
 		@filename = 'dbfile_' + (0xffffffff*Math.random()>>>0)
 		if data? then FS.createDataFile '/', @filename, data, true, true
 		@handleError sqlite3_open @filename, apiTemp
 		@db = getValue(apiTemp, 'i32')
 		@statements = {} # A list of all prepared statements of the database
-		@cache = spatialite_alloc_connection()
-		spatialite_init_ex @db, @cache, 1
+		@_cache = spatialite_alloc_connection()
+		spatialite_init_ex @db, @_cache, verbose
 
 	### Execute an SQL query, ignoring the rows it returns.
 
@@ -413,7 +414,7 @@ class Database
 	###
 	'close': ->
 		stmt['free']() for _,stmt of @statements
-		spatialite_cleanup_ex @cache
+		spatialite_cleanup_ex @_cache
 		@handleError sqlite3_close_v2 @db
 		FS.unlink '/' + @filename
 		@db = null
