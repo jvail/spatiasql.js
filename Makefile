@@ -3,6 +3,8 @@
 
 EMCC_FLAGS :=
 EMCC_FLAGS += -s INLINING_LIMIT=50
+# access emcc settings through Runtime.compilerSettings or Runtime.getCompilerSetting(name)
+EMCC_FLAGS += -s RETAIN_COMPILER_SETTINGS=1
 # noticeable faster without DISABLE_EXCEPTION_CATCHING=0
 EMCC_FLAGS += -s DISABLE_EXCEPTION_CATCHING=0 
 # https://github.com/jsmess/jsmess/blob/master/makefile
