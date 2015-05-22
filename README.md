@@ -6,7 +6,7 @@ Experimental\* JavaScript (emscripten) port of [SpatiaLite](https://www.gaia-gis
 
 ##Demo
 A little web-worker demo is available from here: http://jvail.github.io/spatiasql.js/
-<br>(be patient, the js file is quite large).
+<br>(be patient, loading the js and database file takes some time).
 
 ##Usage
 spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken/sql.js/) (SQLite) and implements the same [API](https://github.com/kripken/sql.js/#usage).
