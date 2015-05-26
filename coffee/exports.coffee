@@ -2,6 +2,7 @@ spatialite_version = Module['cwrap'] 'spatialite_version', 'string', ['number']
 spatialite_alloc_connection = Module['cwrap'] 'spatialite_alloc_connection', 'number', ['number']
 spatialite_init_ex = Module['cwrap'] 'spatialite_init_ex', 'number', ['number', 'number']
 spatialite_cleanup_ex = Module['cwrap'] 'spatialite_cleanup_ex', 'number', ['number']
+load_shapefile_ex = Module['cwrap'] 'load_shapefile_ex', 'number', ['number', 'string', 'string', 'string', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']
 
 sqlite3_open = Module['cwrap'] 'sqlite3_open', 'number', ['string', 'number']
 sqlite3_close_v2 = Module['cwrap'] 'sqlite3_close_v2', 'number', ['number']

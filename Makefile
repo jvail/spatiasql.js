@@ -47,6 +47,7 @@ sqlite:
 	$(PWD)/src/sqlite-amalgamation/sqlite3.c \
 	-o $(PWD)/src/install_bc/lib/sqlite.bc
 
+#--disable-iconv
 spatialite:
 	cd $(PWD)/src/libspatialite; \
 	cp -n configure configure.backup; \
@@ -78,8 +79,7 @@ spatialite:
 	--disable-lwgeom \
 	--disable-libxml2 \
 	--disable-gcov \
-	--disable-examples \
-	--disable-iconv ; \
+	--disable-examples ; \
 	EMDEBUG=1 emmake make install EMCC_CFLAGS="-O2"
 
 js/spatiasql.js: js/shell-pre.js js/spatiasql-raw.js js/shell-post.js
