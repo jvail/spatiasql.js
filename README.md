@@ -18,9 +18,9 @@ var SQL = require('spatiasql');
 var db = new SQL.Database();
 
 db.loadshp('ne_110m_admin_0_countries', 'CP1251', 4326, {
-  shp: fs.readFileSync('shp/ne_110m_admin_0_countries.shp'),
-  dbf: fs.readFileSync('shp/ne_110m_admin_0_countries.dbf'),
-  shx: fs.readFileSync('shp/ne_110m_admin_0_countries.shx')
+  shp: fs.readFileSync('ne_110m_admin_0_countries.shp'),
+  dbf: fs.readFileSync('ne_110m_admin_0_countries.dbf'),
+  shx: fs.readFileSync('ne_110m_admin_0_countries.shx')
 });
 
 var res = db.exec('SELECT name, GeometryType(geometry) FROM ne_110m_admin_0_countries');
