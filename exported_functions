@@ -3,6 +3,7 @@
  "_spatialite_alloc_connection",
  "_spatialite_init_ex",
  "_spatialite_cleanup_ex",
+ "_load_shapefile_ex",
  "_malloc",
  "_free",
  "_sqlite3_open",
