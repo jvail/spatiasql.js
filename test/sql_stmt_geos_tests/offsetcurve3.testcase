@@ -1,9 +1,9 @@
 OffsetCurve - null
 :memory: #use in-memory database
-SELECT AsText(OffsetCurve(null, 1, 0));
+SELECT AsText(OffsetCurve(null, 1));
 1 # rows (not including the header row)
 1 # columns
-AsText(OffsetCurve(null, 1, 0))
+AsText(OffsetCurve(null, 1))
 (NULL)
 
 
