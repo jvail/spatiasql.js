@@ -1,8 +1,8 @@
-IsValidNoDataPixel - NULL pixel
+IsValidPixel - NULL pixel
 NEW:memory: #use in-memory database
-SELECT IsValidNoDataPixel(NULL, 'UINT8', 1);
+SELECT IsValidPixel(NULL, 'UINT8', 1);
 1 # rows (not including the header row)
 1 # columns
-IsValidNoDataPixel(NULL, 'UINT8', 1)
+IsValidPixel(NULL, 'UINT8', 1)
 -1
 

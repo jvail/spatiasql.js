@@ -1,7 +1,7 @@
 SridFromAuthCRS - gfoss.it
 :memory: #use in-memory database
-SELECT SridFromAuthCRS('gfoss.it', 1)
+SELECT SridFromAuthCRS('epsg', 4326)
 1 # rows (not including the header row)
 1 # columns
-SridFromAuthCRS('gfoss.it', 1)
-40000
+SridFromAuthCRS('epsg', 4326)
+4326

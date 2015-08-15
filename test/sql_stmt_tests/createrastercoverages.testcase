@@ -1,5 +1,5 @@
 CreateRasterCoveragesTable
-:memory: #use in-memory database
+NEW:memory: #use in-memory database
 SELECT CreateRasterCoveragesTable();
 1 # rows (not including the header row)
 1 # columns
