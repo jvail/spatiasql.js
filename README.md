@@ -1,6 +1,6 @@
 # spatiasql.js
 
-Experimental\* JavaScript (emscripten) port of [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index)
+Experimental\* JavaScript (emscripten) port of [SpatiaLite 4.3.0](https://www.gaia-gis.it/fossil/libspatialite/index)
 
 \*_all sql_stmt.. tests (geos, proj, geopackage) pass_
 
