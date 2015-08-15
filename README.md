@@ -17,13 +17,13 @@ var fs = require('fs');
 var SQL = require('spatiasql');
 var db = new SQL.Database();
 
-db.loadshp('ne_110m_admin_0_countries', 'CP1251', 4326, {
-  shp: fs.readFileSync('ne_110m_admin_0_countries.shp'),
-  dbf: fs.readFileSync('ne_110m_admin_0_countries.dbf'),
-  shx: fs.readFileSync('ne_110m_admin_0_countries.shx')
+db.loadshp('my_table', 'CP1251', 4326, {
+  shp: fs.readFileSync('my_shp.shp'),
+  shx: fs.readFileSync('my_shp.shx'),
+  dbf: fs.readFileSync('my_shp.dbf')
 });
 
-var res = db.exec('SELECT name, GeometryType(geometry) FROM ne_110m_admin_0_countries');
+var res = db.exec('SELECT name, GeometryType(geometry) FROM my_table');
 ```
 
 ##License
