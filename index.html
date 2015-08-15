@@ -305,6 +305,9 @@ WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCAN
 AND peoples > 50000;
 
 /*
+SELECT AsGeoJSON(Transform(DelaunayTriangulation(Collect(geometry)), 4326), 1, 1|2) AS geojson
+FROM towns WHERE peoples > 50000;
+
 SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON 
 FROM regions;
 
