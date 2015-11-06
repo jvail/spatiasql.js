@@ -299,12 +299,17 @@
 -- SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
 
 -- draw geometry on map by naming a column 'geojson'
+SELECT AsGeoJSON(Transform(HexagonalGrid(ST_Union(geometry), 50000), 4326)) AS geojson
+FROM regions WHERE IsValid(geometry);
+
+
+/* examples
+
 SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson 
 FROM towns 
 WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) 
 AND peoples > 50000;
 
-/*
 SELECT AsGeoJSON(Transform(DelaunayTriangulation(Collect(geometry)), 4326), 1, 1|2) AS geojson
 FROM towns WHERE peoples > 50000;
 
