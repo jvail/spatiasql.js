@@ -1,0 +1,21 @@
+{
+  "name": "spatiasql.js",
+  "version": "4.3.0",
+  "description": "SpatiaLite library with support for opening and writing databases, prepared statements, and more. This SpatiaLite library is in pure javascript (compiled with emscripten).",
+  "keywords": ["sql", "spatialite", "spatial DBMS", "geodata", "emscripten", "asm", "asm.js"],
+  "license": "MLP",
+  "main": "./js/spatiasql.js",
+  "scripts": { "test": "node test/test_sql_stmts.js" },
+  "homepage": "https://github.com/jvail/spatiasql.js",
+  "repository" :
+  { "type" : "git",
+    "url" : "https://github.com/jvail/spatiasql.js.git"
+  },
+  "bugs": {
+    "url" : "https://github.com/jvail/spatiasql.js/issues",
+    "email" : "quasigithub@gmx.de"
+  },
+  "devDependencies": {
+    "test": ">=0.6"
+  }
+}
