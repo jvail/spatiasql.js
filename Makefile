@@ -25,14 +25,14 @@ all: getsrc proj geos zlib sqlite spatialite js/spatiasql.js
 getsrc:
 	mkdir $(PWD)/src; \
 	cd $(PWD)/src; \
-	wget -nc http://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-4.3.0.tar.gz; \
-	tar -xzvf libspatialite-4.3.0.tar.gz; \
+	wget -nc http://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-4.3.0a.tar.gz; \
+	tar -xzvf libspatialite-4.3.0a.tar.gz; \
 	rm -rf libspatialite; \
-	mv -f libspatialite-4.3.0 libspatialite; \
-	wget -nc http://download.osgeo.org/geos/geos-3.4.2.tar.bz2; \
-	tar -xjvf geos-3.4.2.tar.bz2; \
+	mv -f libspatialite-4.3.0a libspatialite; \
+	wget -nc http://download.osgeo.org/geos/geos-3.5.0.tar.bz2; \
+	tar -xjvf geos-3.5.0.tar.bz2; \
 	rm -rf geos; \
-	mv -f geos-3.4.2 geos; \
+	mv -f geos-3.5.0 geos; \
 	wget -nc https://github.com/OSGeo/proj.4/archive/4.9.1.tar.gz; \
 	tar -xzvf 4.9.1.tar.gz; \
 	rm -rf proj; \
