@@ -1,6 +1,6 @@
 {
   "name": "spatiasql.js",
-  "version": "4.3.0",
+  "version": "4.3.0a",
   "description": "SpatiaLite library with support for opening and writing databases, prepared statements, and more. This SpatiaLite library is in pure javascript (compiled with emscripten).",
   "keywords": ["sql", "spatialite", "spatial DBMS", "geodata", "emscripten", "asm", "asm.js"],
   "license": "MLP",
