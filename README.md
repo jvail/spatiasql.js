@@ -1,6 +1,6 @@
 # spatiasql.js
 
-Experimental JavaScript (emscripten) port of [SpatiaLite 4.3.0](https://www.gaia-gis.it/fossil/libspatialite/index)
+Experimental JavaScript (emscripten) port of [SpatiaLite 4.3.0a](https://www.gaia-gis.it/fossil/libspatialite/index)
 
 [![Build Status](https://travis-ci.org/jvail/spatiasql.js.svg?branch=master)](https://travis-ci.org/jvail/spatiasql.js)
 
