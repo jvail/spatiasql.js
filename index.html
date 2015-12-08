@@ -294,17 +294,25 @@
     <div class='absolute-center'>
       <span id='title'><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file (SpatiaLite or <a href="http://www.geopackage.org/#sampledata">GeoPackage</a>).</span>
       <textarea  id='code' name='code' rows="20" cols="90">
--- sample db from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
+/*
+  Sample db from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
+  Editor has Sublime shortcuts enabled.
+  You can draw a geometry on the map by naming a column 'geojson'.
+*/
 
--- SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
+SELECT AsGeoJSON(Transform(HexagonalGrid(ST_Union(geometry), 50000), 4326)) AS geojson
+FROM regions
+WHERE IsValid(geometry);
 
--- draw geometry on map by naming a column 'geojson'
+/* examples
+
+SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
+
 SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson 
 FROM towns 
 WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) 
 AND peoples > 50000;
 
-/*
 SELECT AsGeoJSON(Transform(DelaunayTriangulation(Collect(geometry)), 4326), 1, 1|2) AS geojson
 FROM towns WHERE peoples > 50000;
 
