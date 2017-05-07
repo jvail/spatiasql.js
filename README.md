@@ -4,11 +4,11 @@ Experimental JavaScript (emscripten) port of [SpatiaLite 4.3.0a](https://www.gai
 
 [![Build Status](https://travis-ci.org/jvail/spatiasql.js.svg?branch=master)](https://travis-ci.org/jvail/spatiasql.js)
 
-##Demo
+## Demo
 A little web-worker demo is available from here: http://jvail.github.io/spatiasql.js/
 <br>(be patient, loading the js and database file takes some time).
 
-##Usage
+## Usage
 spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken/sql.js/) (SQLite) and implements the same [API](https://github.com/kripken/sql.js/#usage), exept:
 
  - loading shapefiles:
@@ -26,5 +26,5 @@ db.loadshp('my_table', 'CP1251', 4326, {
 var res = db.exec('SELECT name, GeometryType(geometry) FROM my_table');
 ```
 
-##License
+## License
 Same license as [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index).
