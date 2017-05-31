@@ -37,10 +37,10 @@ getsrc:
 	tar -xzvf 4.9.1.tar.gz; \
 	rm -rf proj; \
 	mv -f proj.4-4.9.1 proj; \
-	wget -nc http://zlib.net/zlib-1.2.8.tar.gz; \
-	tar -xzvf zlib-1.2.8.tar.gz; \
+	wget -nc http://zlib.net/zlib-1.2.11.tar.gz; \
+	tar -xzvf zlib-1.2.11.tar.gz; \
 	rm -rf zlib; \
-	mv -f zlib-1.2.8 zlib; \
+	mv -f zlib-1.2.11 zlib; \
 	wget -nc https://www.sqlite.org/2015/sqlite-amalgamation-3081101.zip; \
 	unzip sqlite-amalgamation-3081101.zip; \
 	rm -rf sqlite; \
