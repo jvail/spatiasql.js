@@ -5,7 +5,11 @@ Experimental JavaScript (emscripten) port of [SpatiaLite 4.3.0a](https://www.gai
 [![Build Status](https://travis-ci.org/jvail/spatiasql.js.svg?branch=master)](https://travis-ci.org/jvail/spatiasql.js)
 
 ## Demo
-A little web-worker demo is available from here: http://jvail.github.io/spatiasql.js/
+A little web-worker demo with both wasm and asm is available from here:
+
+* asm: http://jvail.github.io/spatiasql.js/?asm
+* wasm: http://jvail.github.io/spatiasql.js/?wasm
+
 <br>(be patient, loading the js and database file takes some time).
 
 ## Usage

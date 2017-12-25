@@ -1,84 +1,99 @@
-# run make
-# geos and proj *.a seem not to compile very well to JS. Anyway, the recommend way is to use *.so or *.o
+SPATIALITE_VERSION = '4.3.0a'
+SQLITE_VERSION = '3210000'
+GEOS_VERSION = '3.6.2'
+PROJ4_VERSION = '4.9.3'
+ZLIB_VERSION = '1.2.11'
 
 EMCC_FLAGS :=
-EMCC_FLAGS += -s INLINING_LIMIT=30
-# access emcc settings through Runtime.compilerSettings or Runtime.getCompilerSetting(name)
+EMCC_FLAGS += -s INLINING_LIMIT=20
 EMCC_FLAGS += -s RETAIN_COMPILER_SETTINGS=1
-# EMCC_FLAGS += -s LINKABLE=1
-# noticeable faster without DISABLE_EXCEPTION_CATCHING=0
 EMCC_FLAGS += -s DISABLE_EXCEPTION_CATCHING=0
-# https://github.com/jsmess/jsmess/blob/master/makefile
-# EMCC_FLAGS += -s TOTAL_MEMORY=16777216      # 16mb
-# EMCC_FLAGS += -s TOTAL_MEMORY=33554432      # 32mb
-# EMCC_FLAGS += -s TOTAL_MEMORY=67108864      # 64mb
-# EMCC_FLAGS += -s TOTAL_MEMORY=134217728     # 128mb
-EMCC_FLAGS += -s TOTAL_MEMORY=268435456# 256mb
-# EMCC_FLAGS += -s ALLOW_MEMORY_GROWTH=1
+EMCC_FLAGS += -s EXPORTED_FUNCTIONS="[ \
+	'_spatialite_version', \
+	'_spatialite_alloc_connection', \
+	'_spatialite_init_ex', \
+	'_spatialite_cleanup_ex', \
+	'_load_shapefile_ex', \
+	'_malloc', \
+	'_free', \
+	'_sqlite3_open', \
+	'_sqlite3_exec', \
+	'_sqlite3_free', \
+	'_sqlite3_errmsg', \
+	'_sqlite3_prepare_v2', \
+	'_sqlite3_bind_text', \
+	'_sqlite3_bind_blob', \
+	'_sqlite3_bind_double', \
+	'_sqlite3_bind_int', \
+	'_sqlite3_bind_parameter_index', \
+	'_sqlite3_step', \
+	'_sqlite3_data_count', \
+	'_sqlite3_column_double', \
+	'_sqlite3_column_text', \
+	'_sqlite3_column_blob', \
+	'_sqlite3_column_bytes', \
+	'_sqlite3_column_type', \
+	'_sqlite3_column_name', \
+	'_sqlite3_reset', \
+	'_sqlite3_clear_bindings', \
+	'_sqlite3_finalize', \
+	'_sqlite3_close_v2' \
+]"
+PWD = $(shell pwd)
+TEMP = $(PWD)/src/temp
+BCDIR = $(TEMP)/bc
+PREFIX = --prefix=$(BCDIR)
 
-PWD=$(shell pwd)
-BCDIR=$(PWD)/bc
-PREFIX=--prefix=$(BCDIR)
-
-all: getsrc proj geos zlib sqlite spatialite js/spatiasql.js
+all: getsrc proj4 geos zlib sqlite spatialite asm wasm
 
 getsrc:
-	mkdir $(PWD)/src; \
 	cd $(PWD)/src; \
-	wget -nc http://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-4.3.0a.tar.gz; \
-	tar -xzvf libspatialite-4.3.0a.tar.gz; \
-	rm -rf libspatialite; \
-	mv -f libspatialite-4.3.0a libspatialite; \
-	wget -nc http://download.osgeo.org/geos/geos-3.5.0.tar.bz2; \
-	tar -xjvf geos-3.5.0.tar.bz2; \
-	rm -rf geos; \
-	mv -f geos-3.5.0 geos; \
-	wget -nc https://github.com/OSGeo/proj.4/archive/4.9.1.tar.gz; \
-	tar -xzvf 4.9.1.tar.gz; \
-	rm -rf proj; \
-	mv -f proj.4-4.9.1 proj; \
-	wget -nc http://zlib.net/zlib-1.2.11.tar.gz; \
-	tar -xzvf zlib-1.2.11.tar.gz; \
-	rm -rf zlib; \
-	mv -f zlib-1.2.11 zlib; \
-	wget -nc https://www.sqlite.org/2015/sqlite-amalgamation-3081101.zip; \
-	unzip sqlite-amalgamation-3081101.zip; \
-	rm -rf sqlite; \
-	mv -f sqlite-amalgamation-3081101 sqlite; \
+	mkdir -p temp; \
+	cd temp; \
+	wget -nc http://www.gaia-gis.it/gaia-sins/libspatialite-sources/libspatialite-$(SPATIALITE_VERSION).tar.gz; \
+	tar -xf libspatialite-$(SPATIALITE_VERSION).tar.gz; \
+	wget -nc http://download.osgeo.org/geos/geos-$(GEOS_VERSION).tar.bz2; \
+	tar -xf geos-$(GEOS_VERSION).tar.bz2; \
+	wget -nc http://download.osgeo.org/proj/proj-$(PROJ4_VERSION).tar.gz; \
+	tar -xf proj-$(PROJ4_VERSION).tar.gz; \
+	wget -nc http://zlib.net/zlib-$(ZLIB_VERSION).tar.gz; \
+	tar -xf zlib-1.2.11.tar.gz; \
+	wget -nc https://www.sqlite.org/2017/sqlite-amalgamation-$(SQLITE_VERSION).zip; \
+	unzip -o sqlite-amalgamation-$(SQLITE_VERSION).zip;
 
-proj:
-	cd $(PWD)/src/proj; \
+proj4:
+	cd $(TEMP)/proj-$(PROJ4_VERSION); \
 	emconfigure ./configure $(PREFIX) --without-mutex --host=none-none-none; \
-	emmake make install; \
-	rm -f $(PWD)/src/proj/src/cs2cs.o $(PWD)/src/proj/src/geod.o $(PWD)/src/proj/src/nad2bin.o ./src/proj.o; # remove files for executables \ 
-	find $(PWD)/src/proj/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/proj.bc # join all .o files
+	emmake make -j4 install; \
+	rm -f $(TEMP)/proj-$(PROJ4_VERSION)/src/cs2cs.o $(TEMP)/proj-$(PROJ4_VERSION)/src/geod.o \
+	$(TEMP)/proj-$(PROJ4_VERSION)/src/nad2bin.o $(TEMP)/proj-$(PROJ4_VERSION)/src/temp/proj.o; \
+	find $(TEMP)/proj-$(PROJ4_VERSION)/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/proj.bc;
 
 geos:
-	cd $(PWD)/src/geos; \
+	cd $(TEMP)/geos-$(GEOS_VERSION); \
 	emconfigure ./configure $(PREFIX) --host=none-none-none; \
-	emmake make install; \
-	find $(PWD)/src/geos/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/geos.bc # join all .o files \
-	find $(PWD)/src/geos/capi -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/geos_c.bc # join all .o files
+	emmake make -j4 install; \
+	find $(TEMP)/geos-$(GEOS_VERSION)/src -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/geos.bc; \
+	find $(TEMP)/geos-$(GEOS_VERSION)/capi -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/geos_c.bc;
 
-# could not figure out if it is possible to get rid of zlib
 zlib:
-	cd $(PWD)/src/zlib; \
+	cd $(TEMP)/zlib-$(ZLIB_VERSION); \
 	emconfigure ./configure --static $(PREFIX); \
-	EMDEBUG=1 emmake make install; \
-	find $(PWD)/src/zlib -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/zlib.bc # join all .o files
+	EMDEBUG=1 emmake make -j4 install; \
+	find $(TEMP)/zlib-$(ZLIB_VERSION) -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/zlib.bc;
 
-sqlite:
+sqlite: # https://github.com/kripken/sql.js/issues/210
+	cd $(TEMP)/sqlite-amalgamation-$(SQLITE_VERSION); \
+	cp -f sqlite3.h $(BCDIR)/include/sqlite3.h; \
+	cp -f sqlite3ext.h $(BCDIR)/include/sqlite3ext.h; \
+	sed -i -e 's/#if SQLITE_INT64_TYPE/#ifdef SQLITE_INT64_TYPE/' sqlite3.c; \
 	EMDEBUG=1 emcc -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_INT64_TYPE="long long int" -DSQLITE_THREADSAFE=0 \
-	$(PWD)/src/sqlite/sqlite3.c \
-	-o $(BCDIR)/sqlite.bc
+	sqlite3.c -o $(BCDIR)/sqlite.bc;
 
-#--disable-iconv
-#	CFLAGS="-ULOADABLE_EXTENSION"
 spatialite:
-	cd $(PWD)/src/libspatialite; \
+	cd $(TEMP)/libspatialite-$(SPATIALITE_VERSION); \
 	cp -n configure configure.backup; \
 	cp -f configure.backup configure; \
-	# patch spatialite configure \
 	sed -i \
 	 -e 's/^return pj_init_plus ();/\/\/return pj_init_plus ();/' \
 	 -e 's/^return inflateInit_ ();/\/\/return inflateInit_ ();/' \
@@ -96,7 +111,7 @@ spatialite:
 	 -e 's/^return lwgeom_set_handlers ();/\/\/return lwgeom_set_handlers ();/' configure ; \
 	EMCONFIGURE_JS=1 emconfigure ./configure $(PREFIX) --host=none \
 	CFLAGS="-ULOADABLE_EXTENSION" \
-	CPPFLAGS="-I$(BCDIR)/include/ -I$(PWD)/src/sqlite/" \
+	CPPFLAGS="-I$(BCDIR)/include/" \
 	LDFLAGS="-L$(BCDIR)/lib/" \
 	--with-geosconfig="$(BCDIR)/bin/geos-config" \
 	--enable-geosadvanced=yes \
@@ -104,35 +119,36 @@ spatialite:
 	--enable-mathsql=no \
 	--enable-geocallbacks=no \
 	--enable-freexl=no \
-	--enable-lwgeom=no \
+	--enable-lwgeom=no  \
 	--enable-libxml2=no \
 	--enable-gcov=no \
 	--enable-examples=no ; \
-	EMDEBUG=1 emmake make install;
+	EMDEBUG=1 emmake make -j4 install;
 
-js/spatiasql.js: js/shell-pre.js js/spatiasql-raw.js js/shell-post.js
-	cat $^ > $@; \
-	rm -f $(PWD)/js/spatiasql-raw.js
+.PHONY: asm
+asm: src/pre.js src/post.js
+	EMDEBUG=1 emcc --memory-init-file 0 -O3 $(EMCC_FLAGS) \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['cwrap']" -s TOTAL_MEMORY=268435456 \
+	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a --post-js src/api.js -o dist/spatiasql.js; \
+	cat src/pre.js dist/spatiasql.js src/post.js > dist/spatiasql.js.tmp; \
+	mv dist/spatiasql.js.tmp dist/spatiasql.js; \
+	cat dist/spatiasql.js src/worker.js > dist/spatiasql.worker.js;
 
-js/spatiasql-raw.js: js/api.js exported_functions 
-	EMDEBUG=1 emcc --memory-init-file 0 -O3 $(EMCC_FLAGS) -s EXPORTED_FUNCTIONS=@exported_functions  \
-	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/proj.bc $(BCDIR)/lib/libspatialite.a --post-js js/api.js -o $@
-
-js/api.js: coffee/api.coffee coffee/exports.coffee coffee/api-data.coffee
-	coffee --bare --compile --join $@ --compile $^
-
-# Web worker API
-worker: js/spatiasql.worker.js
-js/worker.js: coffee/worker.coffee
-	coffee --bare --compile --join $@ --compile $^
-
-js/spatiasql.worker.js: js/spatiasql.js js/worker.js
-	cat $^ > $@
+.PHONY: wasm
+wasm: src/pre.js src/post.js
+	EMDEBUG=1 emcc --memory-init-file 0 -O3 $(EMCC_FLAGS) -s WASM=1 \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS="['cwrap']" -s ALLOW_MEMORY_GROWTH=1 \
+	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a --post-js src/api.js -o dist/wasm/spatiasql.js; \
+	cat src/pre.js dist/wasm/spatiasql.js src/post.js > dist/wasm/spatiasql.js.tmp; \
+	mv dist/wasm/spatiasql.js.tmp dist/wasm/spatiasql.js; \
+	cat dist/wasm/spatiasql.js src/worker.wasm.js > dist/wasm/spatiasql.worker.js;
 
 clean:
-	cd $(PWD)/src/proj; emmake make clean; \
-	cd $(PWD)/src/geos; emmake make clean; \
-	cd $(PWD)/src/zlib; emmake make clean; \
-	cd $(PWD)/src/sqlite; emmake make clean; \
-	cd $(PWD)/src/libspatialite; emmake make clean; \
-	rm -f $(PWD)/js/spatiasql.js $(PWD)/js/api.js $(PWD)/js/worker.js $(PWD)/js/spatiasql.worker.js;
+	cd $(TEMP)/proj-$(PROJ4_VERSION); make clean; \
+	cd $(TEMP)/geos-$(GEOS_VERSION); make clean; \
+	cd $(TEMP)/zlib-$(ZLIB_VERSION); make clean; \
+	cd $(TEMP)/sqlite-amalgamation-$(SQLITE_VERSION); make clean; \
+	cd $(TEMP)/libspatialite-$(SPATIALITE_VERSION); make clean; \
+	rm -rf $(BCDIR)/*; \
+	rm -rf $(PWD)/dist/wasm/*; \
+	rm -rf $(PWD)/dist/*.js;
