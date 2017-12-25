@@ -1,5 +1,5 @@
 var fs = require('fs');
-var SQL = require('../js/spatiasql');
+var SQL = require('../dist/spatiasql')();
 var db = new SQL.Database();
 
 var str = function (q) {

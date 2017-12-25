@@ -18,7 +18,7 @@ spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken
  - loading shapefiles:
 ```js
 var fs = require('fs');
-var SQL = require('spatiasql');
+var SQL = require('spatiasql')();
 var db = new SQL.Database();
 
 db.loadshp('my_table', 'CP1251', 4326, {
