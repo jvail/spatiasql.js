@@ -9,19 +9,20 @@
     <script src="lib/codemirror.min.js"></script>
     <script>
       $(function () {
-
-        // modified example from sql.js
+        var runWasm = location.search.substr(1) === 'wasm';
         var id = 1;
         var start = Date.now();
         var layer = null;
-        var worker = new Worker("js/spatiasql.worker.js");
+        var worker = new Worker(
+          runWasm ? 'dist/wasm/spatiasql.worker.js' : 'dist/spatiasql.worker.js'
+        );
         var textarea = $('#code');
         var time = $('#time');
         var pre = $('#res');
         var runBtn = $('#run');
         var clearBtn = $('#clear');
         var input = $('input[type=file]');
-        var editor = CodeMirror.fromTextArea(textarea.get(0), { 
+        var editor = CodeMirror.fromTextArea(textarea.get(0), {
           mode: 'text/x-sql',
           keyMap: 'sublime'
         });
@@ -35,18 +36,41 @@
         runBtn.prop('disabled', true);
         input.prop('disabled', true);
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'test-2.3.sqlite', true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onload = function(e) {
-          var uInt8Array = new Uint8Array(this.response);
-          worker.postMessage({
+        worker.onmessage = function (evt) {
+          if (evt.data.initialized) {
+              var xhr = new XMLHttpRequest();
+              xhr.open('GET', 'test-2.3.sqlite', true);
+              xhr.responseType = 'arraybuffer';
+              xhr.onload = function(e) {
+                var uInt8Array = new Uint8Array(this.response);
+                worker.postMessage({
+                    id: 0,
+                    action: 'open',
+                    buffer: uInt8Array
+                });
+              };
+              xhr.send();
+          }
+          if (event.data.id > 0) {
+            time.html(((Date.now() - start) / 1000).toFixed(3) + ' sec');
+            findAndDrawGeoJSON(event.data.results);
+            pre.prepend('\n');
+            pre.prepend((typeof event.data === 'string' ? event.data : (
+                event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
+              )
+            ));
+            runBtn.prop('disabled', false);
+            input.prop('disabled', false);
+            runBtn.html('run');
+          } else {
+            id++
+            worker.postMessage({
               id: id,
-              action: 'open',
-              buffer: uInt8Array
-          });
+              action: 'exec',
+              sql: 'SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version()'
+            });
+          }
         };
-        xhr.send();
 
         runBtn.on('click', function () {
           var sql = editor.getValue();
@@ -77,6 +101,7 @@
             input.prop('disabled', true);
             runBtn.html('...loading...');
             reader.onload = function () {
+              start = Date.now();
               pre.html('');
               id = 1;
               worker.postMessage({
@@ -95,34 +120,13 @@
           }
         });
 
-        worker.onmessage = function (event) {
-          if (event.data.id > 1) {
-            time.html(((Date.now() - start) / 1000).toFixed(3) + ' sec');
-            findAndDrawGeoJSON(event.data.results);
-            pre.prepend('\n');
-            pre.prepend((typeof event.data === 'string' ? event.data : (
-                event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
-              )
-            ));
-            runBtn.prop('disabled', false);
-            input.prop('disabled', false);
-            runBtn.html('run');              
-          } else {
-            id++
-            worker.postMessage({
-              id: id,
-              action: 'exec',
-              sql: 'SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version()'
-            });
-          }
-        };
-
-        worker.onerror = function (event) {
+        function onerror(event) {
           pre.prepend('\n');
           pre.prepend('Error: ' + event.message);
           runBtn.prop('disabled', false);
-          runBtn.html('run');              
+          runBtn.html('run');
         };
+        worker.onerror = onerror;
 
         function findAndDrawGeoJSON (res) {
 
@@ -131,7 +135,7 @@
             var features = [];
 
             for (var q = 0, qs = res.length; q < qs; q++) {
-              
+
               var cols = res[q].columns
                 , rows = res[q].values
                 ;
@@ -180,12 +184,6 @@
               });
               layer.addTo(map);
               map.fitBounds(layer.getBounds());
-              // if (features[0].geometry.bbox) {
-              //   map.fitBounds([
-              //     [features[0].geometry.bbox[1], features[0].geometry.bbox[0]],
-              //     [features[0].geometry.bbox[3], features[0].geometry.bbox[2]]
-              //   ]);
-              // }
             }
 
           }
@@ -235,13 +233,13 @@
         overflow-y: scroll;
       }
       .CodeMirror {
-        max-width: 1000px;     
+        max-width: 1000px;
         min-width: 1000px;
-        height: calc(50% - 38px);     
+        height: calc(50% - 38px);
         border: 2px solid;
         border-color: steelblue;
         border-radius: 4px;
-        margin-bottom: 16px;     
+        margin-bottom: 16px;
       }
       #run, #clear {
         width: 80px;
@@ -257,7 +255,7 @@
       #time {
         margin-top: 16px;
         margin-bottom: 10px;
-        margin-left: 16px;        
+        margin-left: 16px;
         float: right;
         height: 30px;
         vertical-align: middle;
@@ -308,19 +306,19 @@ WHERE IsValid(geometry);
 
 SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
 
-SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson 
-FROM towns 
-WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA')) 
+SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson
+FROM towns
+WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA'))
 AND peoples > 50000;
 
 SELECT AsGeoJSON(Transform(DelaunayTriangulation(Collect(geometry)), 4326), 1, 1|2) AS geojson
 FROM towns WHERE peoples > 50000;
 
-SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON 
+SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON
 FROM regions;
 
-SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON 
-FROM highways 
+SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON
+FROM highways
 WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA' oR name='LAZIO'));
 */
         </textarea>
