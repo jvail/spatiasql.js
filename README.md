@@ -10,7 +10,7 @@ A little web-worker demo with both wasm and asm is available from here:
 * asm: http://jvail.github.io/spatiasql.js/?asm
 * wasm: http://jvail.github.io/spatiasql.js/?wasm
 
-<br>(be patient, loading the js and database file takes some time).
+(be patient, loading the js and database file takes some time).
 
 ## Usage
 spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken/sql.js/) (SQLite) and implements the same [API](https://github.com/kripken/sql.js/#usage), exept:
