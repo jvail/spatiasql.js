@@ -180,72 +180,23 @@ window.onload = function () {
 		}
 	}
 
-
-		document.getElementById('file').addEventListener('change', function () {
-			var file = this.files.item(0);
-			if (file) {
-				var reader = new FileReader();
-				reader.onload = function () {
-					worker.postMessage({
-						id: id++,
-						action: 'open',
-						buffer: new Uint8Array(reader.result)
-					});
-					worker.postMessage({
-						id: id++,
-						action: 'exec',
-						sql: 'SELECT * FROM sqlite_master WHERE type="table" OR type="view"'
-					});
-				}
-				reader.readAsArrayBuffer(file);
+	document.getElementById('file').addEventListener('change', function () {
+		var file = this.files.item(0);
+		if (file) {
+			var reader = new FileReader();
+			reader.onload = function () {
+				worker.postMessage({
+					id: id++,
+					action: 'open',
+					buffer: new Uint8Array(reader.result)
+				});
+				worker.postMessage({
+					id: id++,
+					action: 'exec',
+					sql: 'SELECT * FROM sqlite_master WHERE type="table" OR type="view"'
+				});
 			}
-		});
-
-
-	// (function () {
-	// 	var ctrl = document.getElementById('control'),  tbl = document.getElementById('tbl');
-	// 	(function () {
-	// 		var down = false;
-	// 		tbl.style.maxWidth = ctrl.getBoundingClientRect().width + 'px';
-	// 		document.getElementById('split-main').addEventListener('mousedown', function (evt) {
-	// 			down = true;
-
-	// 		});
-	// 		document.getElementById('app').addEventListener('mouseup', function (evt) {
-	// 			down = false;
-	// 			this.style.cursor = '';
-	// 		});
-	// 		document.getElementById('app').addEventListener('mousemove', function (evt) {
-	// 			if (down) {
-	// 				ctrl.style.minWidth = evt.clientX + 'px';
-	// 				tbl.style.maxWidth = evt.clientX + 'px';
-	// 				editor.setSize(evt.clientX, null);
-	// 				this.style.cursor = 'col-resize';
-	// 				map.resize();
-	// 				return false;
-	// 			}
-	// 		});
-	// 	}());
-	// 	(function () {
-	// 		var down = false, sql = document.getElementById('sql');
-	// 		document.getElementById('split-ctrl').addEventListener('mousedown', function (evt) {
-	// 			down = true;
-	// 		});
-	// 		document.getElementById('app').addEventListener('mouseup', function (evt) {
-	// 			down = false;
-	// 			this.style.cursor = '';
-	// 		});
-	// 		document.getElementById('app').addEventListener('mousemove', function (evt) {
-	// 			if (down) {
-	// 				sql.style.minHeight = (evt.clientY - sql.getBoundingClientRect().top) + 'px';
-	// 				editor.setSize(null, (evt.clientY - sql.getBoundingClientRect().top));
-	// 				tbl.style.maxHeight = (ctrl.getBoundingClientRect().height - sql.getBoundingClientRect().height) + 'px';
-	// 				this.style.cursor = 'row-resize';
-	// 				return false;
-	// 			}
-	// 		});
-	// 	}());
-	// }());
-
-
+			reader.readAsArrayBuffer(file);
+		}
+	});
 }
