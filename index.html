@@ -1,337 +1,70 @@
+<!DOCTYPE html>
 <html>
-  <head>
-    <title>spatiasql.js</title>
-    <meta content="">
-    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
-    <link rel="stylesheet" href="lib/codemirror.css">
-    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
-    <script src="lib/codemirror.min.js"></script>
-    <script>
-      $(function () {
-        var runWasm = location.search.substr(1) === 'wasm';
-        var id = 1;
-        var start = Date.now();
-        var layer = null;
-        var worker = new Worker(
-          runWasm ? 'dist/wasm/spatiasql.worker.js' : 'dist/spatiasql.worker.js'
-        );
-        var textarea = $('#code');
-        var time = $('#time');
-        var pre = $('#res');
-        var runBtn = $('#run');
-        var clearBtn = $('#clear');
-        var input = $('input[type=file]');
-        var editor = CodeMirror.fromTextArea(textarea.get(0), {
-          mode: 'text/x-sql',
-          keyMap: 'sublime'
-        });
-        var map = new L.Map('map');
-        map.setView([49.8, 7.8], 9);
-        L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors',
-            maxZoom: 18
-        }).addTo(map);
-
-        runBtn.prop('disabled', true);
-        input.prop('disabled', true);
-
-        worker.onmessage = function (evt) {
-          if (evt.data.initialized) {
-              var xhr = new XMLHttpRequest();
-              xhr.open('GET', 'test-2.3.sqlite', true);
-              xhr.responseType = 'arraybuffer';
-              xhr.onload = function(e) {
-                var uInt8Array = new Uint8Array(this.response);
-                worker.postMessage({
-                    id: 0,
-                    action: 'open',
-                    buffer: uInt8Array
-                });
-              };
-              xhr.send();
-          }
-          if (event.data.id > 0) {
-            time.html(((Date.now() - start) / 1000).toFixed(3) + ' sec');
-            findAndDrawGeoJSON(event.data.results);
-            pre.prepend('\n');
-            pre.prepend((typeof event.data === 'string' ? event.data : (
-                event.data.results ? JSON.stringify(event.data.results, null, 2) : JSON.stringify(event.data, null, 2)
-              )
-            ));
-            runBtn.prop('disabled', false);
-            input.prop('disabled', false);
-            runBtn.html('run');
-          } else {
-            id++
-            worker.postMessage({
-              id: id,
-              action: 'exec',
-              sql: 'SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version()'
-            });
-          }
-        };
-
-        runBtn.on('click', function () {
-          var sql = editor.getValue();
-          if (sql.length > 0) {
-            runBtn.prop('disabled', true);
-            runBtn.html('...running...');
-            id++;
-            start = Date.now();
-            worker.postMessage({
-              id: id,
-              action: 'exec',
-              sql: sql
-            });
-          }
-        });
-
-        clearBtn.on('click', function () {
-          pre.html('');
-          if (layer)
-            map.removeLayer(layer);
-        });
-
-        input.on('change', function () {
-          var file = input.get(0).files.item(0);
-          if (file) {
-            var reader = new FileReader();
-            runBtn.prop('disabled', true);
-            input.prop('disabled', true);
-            runBtn.html('...loading...');
-            reader.onload = function () {
-              start = Date.now();
-              pre.html('');
-              id = 1;
-              worker.postMessage({
-                id: id,
-                action: 'open',
-                buffer: new Uint8Array(reader.result)
-              });
-              id++
-              worker.postMessage({
-                  id: id,
-                  action: 'exec',
-                  sql: 'SELECT name FROM sqlite_master WHERE type="table"'
-              });
-            }
-            reader.readAsArrayBuffer(file);
-          }
-        });
-
-        function onerror(event) {
-          pre.prepend('\n');
-          pre.prepend('Error: ' + event.message);
-          runBtn.prop('disabled', false);
-          runBtn.html('run');
-        };
-        worker.onerror = onerror;
-
-        function findAndDrawGeoJSON (res) {
-
-          if (Array.isArray(res)) {
-
-            var features = [];
-
-            for (var q = 0, qs = res.length; q < qs; q++) {
-
-              var cols = res[q].columns
-                , rows = res[q].values
-                ;
-
-              if (res[q].columns.length == 0)
-                continue;
-
-              for (var c = 0, cs = cols.length; c < cs; c++) {
-                if (cols[c].toLowerCase() === 'geojson') {
-                  for (var r = 0, rs = rows.length; r < rs; r++) {
-                    try {
-                      var geojson = JSON.parse(rows[r][c]);
-                      var feature = {
-                        type: 'Feature',
-                        properties: {},
-                        geometry: geojson
-                      };
-                      rows[r].forEach(function (data, index) {
-                        if (index !== c) {
-                          if (typeof data === 'number')
-                            feature.properties[cols[index]] = data.toFixed(2);
-                          else if (typeof data === 'string')
-                            feature.properties[cols[index]] = (data.length > 20 ? data.substr(0, 20) + '..' : data);
-                        }
-                      });
-                      rows[r][c] = geojson; // nicer to render in pre
-                      if (feature.geometry)
-                        features.push(feature);
-                    } catch (e) {
-                      console.log(e);
-                      pre.prepend('Error: ' + e.message + '\n');
-                    }
-                  }
-                }
-              }
-
-            }
-
-            if (features.length > 0) {
-              if (layer)
-                map.removeLayer(layer);
-              layer = L.geoJson(features, {
-                onEachFeature: function onEachFeature(feature, layer) {
-                  layer.bindPopup(JSON.stringify(feature.properties, null, 2));
-                }
-              });
-              layer.addTo(map);
-              map.fitBounds(layer.getBounds());
-            }
-
-          }
-        }
-
-      });
-    </script>
-
-    <style>
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        background-color: #eee;
-        font-size: 14px;
-        font-family:"Helvetica Neue", Arial, Helvetica, sans-serif;
-      }
-      .absolute-center {
-        margin-left: auto;
-        margin-right: auto;
-        position: absolute;
-        top: 0; left: 0; bottom: 0; right: 0;
-      }
-      body > div {
-        width: 1000px;
-        height: 700px;
-      }
-      #map {
-        width: 492px;
-        height: 300px;
-        border: 2px solid;
-        border-color: grey;
-        border-radius: 4px;
-        margin-right: 16px;
-        float: left;
-      }
-      #res {
-        width: 492px;
-        height: 300px;
-        margin: 0px;
-        padding: 2px;
-        background-color: white;
-        border: 2px solid;
-        border-color: grey;
-        border-radius: 4px;
-        overflow-x: scroll;
-        overflow-y: scroll;
-      }
-      .CodeMirror {
-        max-width: 1000px;
-        min-width: 1000px;
-        height: calc(50% - 38px);
-        border: 2px solid;
-        border-color: steelblue;
-        border-radius: 4px;
-        margin-bottom: 16px;
-      }
-      #run, #clear {
-        width: 80px;
-        height: 30px;
-        margin-top: 16px;
-        margin-bottom: 10px;
-        margin-left: 16px;
-        border: 1px solid;
-        border-color: grey;
-        border-radius: 4px;
-        float: right;
-      }
-      #time {
-        margin-top: 16px;
-        margin-bottom: 10px;
-        margin-left: 16px;
-        float: right;
-        height: 30px;
-        vertical-align: middle;
-        line-height: 30px;
-      }
-      #title {
-        width: 100%;
-        text-align: center;
-        display: block;
-        line-height: 120%;
-        font-size: 200%;
-        font-family: Georgia, serif;
-        margin: 16px;
-      }
-      #title > a {
-        text-decoration: none;
-        color: steelblue;
-      }
-      title > a:hover {
-        text-decoration: underline;
-      }
-      input[type='file']  {
-        float: left;
-        margin-top: 16px;
-        margin-bottom: 10px;
-        border: 1px solid;
-        border-color: grey;
-        border-top-right-radius: 4px;
-        border-bottom-right-radius: 4px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class='absolute-center'>
-      <span id='title'><a href="https://github.com/jvail/spatiasql.js">spatiasql.js</a> - query sample db or choose a file (SpatiaLite or <a href="http://www.geopackage.org/#sampledata">GeoPackage</a>).</span>
-      <textarea  id='code' name='code' rows="20" cols="90">
+	<head>
+		<title></title>
+		<meta content=''>
+		<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.css' rel='stylesheet' />
+		<link href='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/codemirror.min.css' rel='stylesheet' />
+		<link href='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/theme/monokai.min.css' rel='stylesheet' />
+		<!-- <link href='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/addon/scroll/simplescrollbars.min.css' rel='stylesheet' /> -->
+		<link rel='stylesheet' type='text/css' href='css/index.css'>
+		<script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.43.0/mapbox-gl.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.26.0/codemirror.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/keymap/sublime.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/mode/sql/sql.min.js'></script>
+		<script src='https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/addon/scroll/simplescrollbars.min.js'></script>
+		<style></style>
+	</head>
+	<body>
+		<div id='app'>
+			<header>
+				<p id='title'>
+					<a href='https://github.com/jvail/spatiasql.js'>spatiasql.js</a>
+					 - query sample db or choose a file
+					 (<a href='https://www.gaia-gis.it/fossil/libspatialite/index'>SpatiaLite</a>
+					 or
+					 <a href='http://www.geopackage.org/#sampledata'>GeoPackage</a>).</p>
+			</header>
+			<div id='main'>
+				<div id='control'>
+					<div id='panel'>
+						<button id='run'>run query</button>
+						<input id='file' type='file'/>
+						<span id='error'></span>
+						<span id='time'></span>
+					</div>
+					<div id='tbl'></div>
+					<div id='editor'>
+						<textarea id='code' name='code'>
 /*
-  Sample db from https://www.gaia-gis.it/spatialite-2.3.1/resources.html
+  Sample db from https://www.gaia-gis.it/
   Editor has Sublime shortcuts enabled.
-  You can draw a geometry on the map by naming a column 'geojson'.
+  You can draw a geometry on the map by including 'geojson' in a column name.
 */
 
-SELECT AsGeoJSON(Transform(HexagonalGrid(ST_Union(geometry), 50000), 4326)) AS geojson
+-- SELECT * FROM sqlite_master WHERE type='table'
+
+SELECT AsGeoJSON(Transform(HexagonalGrid(ST_Union(geometry), 10000), 4326), 6) AS geojson
 FROM regions
-WHERE IsValid(geometry);
-
-/* examples
-
-SELECT sqlite_version(), spatialite_version(), proj4_version(), geos_version();
-
-SELECT name, peoples, AsGeoJSON(Transform(geometry, 4326), 1, 1|2) AS geojson
+WHERE  name='TOSCANA'
+AND IsValid(geometry)
+UNION
+SELECT AsGeoJSON(Transform(Simplify(geometry, 1000), 4326), 6) AS geojson
+FROM highways
+WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA'))
+AND length(geometry) > 10000
+UNION
+SELECT AsGeoJSON(Transform(geometry, 4326), 6) AS geojson
 FROM towns
 WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='TOSCANA'))
-AND peoples > 50000;
-
-SELECT AsGeoJSON(Transform(DelaunayTriangulation(Collect(geometry)), 4326), 1, 1|2) AS geojson
-FROM towns WHERE peoples > 50000;
-
-SELECT name, round(Area(geometry)) AS area, AsGeoJSON(Transform(geometry, 4326), 3, 1|2) AS GeoJSON
-FROM regions;
-
-SELECT round(ST_Length(geometry)) AS length, AsGeoJSON(Transform(geometry, 4326), 4, 1|2) AS GeoJSON
-FROM highways
-WHERE Within(geometry, (SELECT Collect(geometry) FROM regions WHERE name='UMBRIA' oR name='LAZIO'));
-*/
-        </textarea>
-      <div>
-        <div id='map'></div>
-        <pre id='res'></pre>
-      </div>
-      <div>
-        <input type='file'>
-        <button id='run'>...loading...</button>
-        <button id='clear'>clear</button>
-        <span id='time'></span>
-      </div>
-    </div>
-  </body>
+AND peoples > 10000;
+						</textarea>
+					</div>
+				</div>
+				<div id='map'></div>
+			</div>
+		</div>
+		<script src='js/index.js'></script>
+	</body>
 </html>
