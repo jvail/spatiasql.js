@@ -87,7 +87,7 @@ sqlite: # https://github.com/kripken/sql.js/issues/210
 	cp -f sqlite3.h $(BCDIR)/include/sqlite3.h; \
 	cp -f sqlite3ext.h $(BCDIR)/include/sqlite3ext.h; \
 	sed -i -e 's/#if SQLITE_INT64_TYPE/#ifdef SQLITE_INT64_TYPE/' sqlite3.c; \
-	EMDEBUG=1 emcc -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_INT64_TYPE="long long int" -DSQLITE_THREADSAFE=0 \
+	EMDEBUG=1 emcc -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_INT64_TYPE="long long int" -DSQLITE_THREADSAFE=0 \
 	sqlite3.c -o $(BCDIR)/sqlite.bc;
 
 spatialite:
