@@ -1,34 +1,59 @@
 # spatiasql.js
 
-Experimental JavaScript (emscripten) port of [SpatiaLite 4.3.0a](https://www.gaia-gis.it/fossil/libspatialite/index) (including SQLite 3.21.0, proj 4.9.3, geos 3.6.2)
+JavaScript (emscripten) port of [SpatiaLite 5.0.0-beta](https://www.gaia-gis.it/fossil/libspatialite/index) (including SQLite 3.24.0, proj 5.1.0, geos 3.6.2)
 
 [![Build Status](https://travis-ci.org/jvail/spatiasql.js.svg?branch=master)](https://travis-ci.org/jvail/spatiasql.js)
 
 ## Demo
-A little web-worker demo with both wasm and asm is available from here:
-
-* asm: http://jvail.github.io/spatiasql.js/?asm
-* wasm: http://jvail.github.io/spatiasql.js/?wasm
+A little web-worker demo with both wasm and asm is available from here: xxx
 
 (be patient, loading the js and database file takes some time).
 
 ## Usage
-spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken/sql.js/) (SQLite) and implements the same [API](https://github.com/kripken/sql.js/#usage), exept:
+spatiasql.js (SpatiaLite) is an extension of [sql.js](https://github.com/kripken/sql.js/) (SQLite) and implements the same (for node), but async API for the browser, exept:
 
- - loading shapefiles:
+ - loading shapefiles in node:
 ```js
-var fs = require('fs');
-var SQL = require('spatiasql')();
-var db = new SQL.Database();
+const fs = require('fs');
+const spatiasql = require('spatiasql-node');
 
-db.loadshp('my_table', 'CP1251', 4326, {
-  shp: fs.readFileSync('my_shp.shp'),
-  shx: fs.readFileSync('my_shp.shx'),
-  dbf: fs.readFileSync('my_shp.dbf')
+spatiasql.then(Database => {
+
+  const db = new Database();
+
+  db.loadshp('my_table', 'CP1251', 4326, {
+    shp: fs.readFileSync('my_file.shp'),
+    shx: fs.readFileSync('my_file.shx'),
+    dbf: fs.readFileSync('my_file.dbf')
+  });
+
+  let res = db.exec('SELECT * FROM my_table');
+  console.log(res);
+
 });
-
-var res = db.exec('SELECT name, GeometryType(geometry) FROM my_table');
 ```
 
-## License
-Same license as [SpatiaLite](https://www.gaia-gis.it/fossil/libspatialite/index).
+ - loading shapefiles in the browser:
+```js
+import { Database } from 'spatiasql';
+
+const db = new Database();
+
+const files = await Promise.all([
+  fetch('my_file.shp').then(res => res.arrayBuffer()),
+  fetch('my_file.shx').then(res => res.arrayBuffer()),
+  fetch('my_file.dbf').then(res => res.arrayBuffer())
+]);
+
+const loaded = await db.loadshp('my_table', 'CP1251', 4326, {
+    shp: files[0],
+    shx: files[1],
+    dbf: files[2]
+  });
+
+if (loaded) {
+  db.exec('SELECT * FROM my_table')
+    .then(res => console.log(res));
+}
+
+```

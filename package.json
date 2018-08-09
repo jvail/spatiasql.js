@@ -1,6 +1,6 @@
 {
   "name": "spatiasql",
-  "version": "2.0.1",
+  "version": "3.0.0-beta",
   "description": "JS (emscripten) port of SpatiaLite ",
   "main": "dist/spatiasql.js",
   "directories": {
@@ -8,8 +8,12 @@
   },
   "scripts": {
     "test": "node test/test_sql_stmts.js; node test/test_sql_stmts.js wasm;",
-    "test-asm": "node test/test_sql_stmts.js",
-    "test-wasm": "node test/test_sql_stmts.js wasm"
+    "build": "tsc; DEBUG=0 make node worker",
+    "build-debug": "tsc; DEBUG=1 make node worker",
+    "build-all": "tsc; make DEBUG=0 all",
+    "build-all-debug": "tsc; DEBUG=1 make all",
+    "clean": "make clean",
+    "tsc": "tsc"
   },
   "repository": {
     "type": "git",
@@ -26,5 +30,9 @@
   "bugs": {
     "url": "https://github.com/jvail/spatiasql.js/issues"
   },
-  "homepage": "https://github.com/jvail/spatiasql.js#readme"
+  "homepage": "https://github.com/jvail/spatiasql.js#readme",
+  "devDependencies": {
+    "typescript": "^2.9.2"
+  },
+  "dependencies": {}
 }
