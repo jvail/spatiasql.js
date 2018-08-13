@@ -1,22 +1,31 @@
-var fs = require('fs');
-var args = require('process').argv.slice(2);
-var assert = require('assert');
+const fs = require('fs');
+const assert = require('assert');
+const spatiasql = require('../dist/spatiasql-node');
 
-if (args[0] === 'wasm') {
-  require('../dist/wasm/spatiasql')(tests, { pathWasm: 'dist/wasm/spatiasql.wasm' });
-} else {
-  tests(require('../dist/spatiasql')());
-}
+// function isHex(h) {
+//   var a = parseInt(h, 16);
+//   return (a.toString(16) === h.toLowerCase()) || (a === 0 && !h.match(/[^0]*/));
+// }
 
-function tests(SQL) {
+spatiasql.then(Database => {
+
+  try {
+    test(Database);
+  } catch (err) {
+    console.log(err);
+  }
+
+});
+
+function test(Database) {
 
   var db_name = '';
   var noFailed = 0;
   var noCases = 0;
   var caseFailed = [];
 
-  var db = new SQL.Database();
-  var db_memory = new SQL.Database();
+  var db = new Database();
+  var db_memory = new Database();
   db_memory.exec("SELECT InitSpatialMetaData()");
 
   var testcases = fs.readdirSync('test/sql_stmt_tests');
@@ -35,12 +44,12 @@ function tests(SQL) {
         db.close();
       db_name = lines[1].substr(0, (lines[1].indexOf('#') < 0 ? lines[1].length : lines[1].indexOf('#'))).trim();
       if (db_name.indexOf('NEW:memory:') > -1) {
-        db = new SQL.Database();
+        db = new Database();
         db.exec("SELECT InitSpatialMetaData()");
       } else if (db_name === ':memory:') {
         db = db_memory;
       } else {
-        db = new SQL.Database(fs.readFileSync('test/' + db_name));
+        db = new Database(fs.readFileSync('test/' + db_name));
       }
 
       var stmt = lines[2];
@@ -56,39 +65,41 @@ function tests(SQL) {
       for (var r = 0; r < res[0].values.length; r++) {
         for (var c = 0; c < res[0].values[r].length; c++) {
           var idx = r * cols + c;
+          let lenTocompare = -1;
+
           if (expect[idx].trim() === '(NULL)')
-            expect[idx] = null;
+            expect[idx] = 'null';
           else // remove comments (#)
             expect[idx] = expect[idx].substr(0, (expect[idx].indexOf('#') < 0 ? expect[idx].length : expect[idx].indexOf('#'))).trim();
 
-          if (!isNaN(parseFloat(res[0].values[r][c]))) {
-            // TODO: split "expect" at ':'' add precision
-            res[0].values[r][c] = parseFloat(res[0].values[r][c]).toFixed();  // simply round
-            expect[idx] = parseFloat(expect[idx]).toFixed();
-          } else if (typeof expect[idx] === 'string') {
-            // remove ':X' (precision) from end of stmt
-            if (expect[idx].lastIndexOf(':') === expect[idx].length - 2)
-              expect[idx] = expect[idx].substr(0, expect[idx].lastIndexOf(':'));
+          let expected = expect[idx];
+          let found = res[0].values[r][c] !== null ? res[0].values[r][c].toString() : 'null';
+          if (expected.match(/:\d+$/)) {
+              lenTocompare = parseInt(expected.substring(expected.lastIndexOf(':') + 1));
+              expected = expected.substr(0, lenTocompare);
+              found = found.substr(0, lenTocompare);
           }
 
-          // console.log('expected:\n ' + expect[idx]);
-          // console.log('found:\n ' + res[0].values[r][c]);
-          assert.equal(res[0].values[r][c], expect[idx], title);
-          if (res[0].values[r][c] != expect[idx]) {
-            // console.log('column/row: ' + c + '/' + r + ' ERROR');
+          try {
+            assert.ok(found === expected ||
+              (!isNaN(parseFloat(found)) && (parseFloat(found).toFixed(4) === parseFloat(expected).toFixed(4))), title);
+          } catch (err) {
+            console.log('expected:\n ' + expected + ' ' + expect[idx]);
+            console.log('found:\n ' + found + ' ' +  res[0].values[r][c]);
+            console.log('lenTocompare:\n ' + lenTocompare);
+            console.log(err);
             if (caseFailed.indexOf(testcases[i]) < 0) {
               noFailed++;
               caseFailed.push(testcases[i])
             }
-          } else {
-            // console.log('column/row: ' + c + '/' + r + ' OK');
           }
+
         }
       }
     }
   }
 
-  console.log('\n' + noFailed + ' of ' + noCases + ' tests failed\n\n' + caseFailed.join('\n'));
+  console.log('\n' + noFailed + ' of ' + noCases + ' tests failed\n\nFailed tests:\n' + caseFailed.join('\n'));
 
   if (db_memory.db)
     db_memory.close();

@@ -1,8 +1,8 @@
 IsValidRasterTile - NULL pyramid-level
 NEW:memory: #use in-memory database
-SELECT IsValidRasterTile('alpha', NULL, zeroblob(4), zeroblob(4));
+SELECT IsValidRasterTile(NULL, 'alpha', NULL, zeroblob(4), zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-IsValidRasterTile('alpha', NULL, zeroblob(4), zeroblob(4))
+IsValidRasterTile(NULL, 'alpha', NULL, zeroblob(4), zeroblob(4))
 -1
 

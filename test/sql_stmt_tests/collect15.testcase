@@ -4,5 +4,5 @@ SELECT AsText(COLLECT(GeomFromText("POINTM(4 5 3.2)"), GeomFromText("POINTZM(1 2
 1 # rows (not including the header row)
 1 # columns
 AsText(COLLECT(GeomFromText("POINTM(4 5 3.2)"), GeomFromText("POINTZM(1 2 6 4)")))
-MULTIPOINT ZM(4 5 0 3.2, 1 2 6 4)
+MULTIPOINT M(4 5 3.2, 1 2 4)
 

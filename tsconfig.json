@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+        "target": "esnext",
+        "outDir": "dist",
+        "declaration": true,
+        "module": "commonjs",
+        "lib": [
+            "es6",
+            "webworker",
+            "esnext.asynciterable"
+        ]
+	},
+    "include": [
+        "src/spatiasql.ts"
+    ]
+}

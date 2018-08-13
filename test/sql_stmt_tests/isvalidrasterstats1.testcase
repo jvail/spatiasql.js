@@ -1,8 +1,8 @@
-IsValidRasterStatistics - standard: 2 args
+IsValidRasterStatistics - standard
 NEW:memory: #use in-memory database
-SELECT IsValidRasterStatistics('alpha', zeroblob(4));
+SELECT IsValidRasterStatistics('main', 'alpha', zeroblob(4));
 1 # rows (not including the header row)
 1 # columns
-IsValidRasterStatistics('alpha', zeroblob(4))
+IsValidRasterStatistics('main', 'alpha', zeroblob(4))
 0
 
