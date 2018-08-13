@@ -1,7 +1,7 @@
 {
   "name": "spatiasql",
   "version": "3.0.0-beta",
-  "description": "JS (emscripten) port of SpatiaLite ",
+  "description": "JS (emscripten) port of SpatiaLite",
   "main": "dist/spatiasql.js",
   "directories": {
     "test": "test"
