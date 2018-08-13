@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node test/test_sql_stmts.js; node test/test_sql_stmts.js wasm;",
+    "test": "node test/test_sql_stmts.js",
     "build": "tsc; DEBUG=0 make node worker",
     "build-debug": "tsc; DEBUG=1 make node worker",
     "build-all": "tsc; make DEBUG=0 all",

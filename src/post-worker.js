@@ -12,13 +12,13 @@ initialize.then(function (Database) {
 		return stmts.find(function (stmt) { return stmtID === stmt.id }).stmt;
 	}
 	self.onmessage = function (event) {
-		var buff, data, result;
-		data = event['data'];
+
+		var data = event['data'];
 		switch (data != null ? data['action'] : void 0) {
 			case 'open':
 				createDb((data.buffer ? new Uint8Array(data.buffer) : undefined));
 				return postMessage(true);
-			case 'close':
+			case 'close': // FIXME: error after db.close() in spatialite.ts
 				if (db != null) {
 					db.close();
 				}
@@ -35,7 +35,10 @@ initialize.then(function (Database) {
 						while (stmt.step()) {
 							values.push(stmt.get());
 						}
-						postMessage(values);
+						postMessage([{
+							columns: stmt.getColumnNames(),
+							values: values
+						}]);
 					} else {
 						postMessage(db.exec(data.sql));
 					}
@@ -112,7 +115,7 @@ initialize.then(function (Database) {
 			case 'export':
 				try {
 					var buffer = db.export().buffer;
-					return postMessage(buffer, [buffer]);
+					return postMessage(buffer);
 				} catch (err) {
 					return postMessage({
 						'error': err.message
@@ -131,12 +134,51 @@ initialize.then(function (Database) {
 					});
 				}
 				break;
+			case 'asGeoJSON':
+				try {
+					var results = [];
+					var precision = data.options && data.options.precision ? data.options.precision : 7;
+					var bbox = data.options && data.options.bbox ? 1 : 0;
+					var stmt = db.prepare('select AsGeoJSON(Transform(:geom, 4326), :precision, :bbox)');
+					data.geoms.forEach(function (geom) {
+						stmt.bind([geom, precision, bbox]);
+						while (stmt.step()) {
+							results.push(stmt.get());
+						}
+					});
+					stmt.free();
+					return postMessage(results);
+				} catch (err) {
+					return postMessage({
+						'error': err.message
+					});
+				}
+				break;
+			case 'geomFromGeoJSON':
+				try {
+					var results = [];
+					var stmt = db.prepare('select GeomFromGeoJSON(:json)');
+					data.jsons.forEach(function (json) {
+						stmt.bind([json]);
+						while (stmt.step()) {
+							results.push(stmt.get());
+						}
+					});
+					stmt.free();
+					return postMessage(results);
+				} catch (err) {
+					return postMessage({
+						'error': err.message
+					});
+				}
+				break;
 			default:
 				postMessage({
 					'error': 'Invalid action : ' + (data != null ? data.action : undefined)
 				});
 		}
 	};
+
 	postMessage({ initialized: true });
 });
 

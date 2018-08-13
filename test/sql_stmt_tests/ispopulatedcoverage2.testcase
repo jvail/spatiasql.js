@@ -1,9 +1,9 @@
 IsPopulatedCoverage - NULL coverage-name
 NEW:memory: #use in-memory database
-SELECT IsPopulatedCoverage(NULL);
+SELECT IsPopulatedCoverage('main', NULL);
 1 # rows (not including the header row)
 1 # columns
-IsPopulatedCoverage(NULL)
+IsPopulatedCoverage('main', NULL)
 -1
 
 

@@ -1,5 +1,7 @@
 var initialize = new Promise(function (resolve) {
 
+    // TODO: add spatialite_shutdown();
+
     Module['onRuntimeInitialized'] = function () {
         var spatialite_alloc_connection = Module['cwrap']('spatialite_alloc_connection', 'number', ['number']),
             spatialite_init_ex = Module['cwrap']('spatialite_init_ex', 'number', ['number', 'number']),
@@ -625,19 +627,9 @@ var initialize = new Promise(function (resolve) {
              */
 
             Database.prototype['export'] = function () {
-                var _, binaryDb, ref, stmt;
-                ref = this.statements;
-                for (_ in ref) {
-                    stmt = ref[_];
-                    stmt['free']();
-                }
-                this.handleError(sqlite3_close_v2(this.db));
-                binaryDb = FS.readFile(this.filename, {
+                return FS.readFile(this.filename, {
                     encoding: 'binary'
                 });
-                this.handleError(sqlite3_open(this.filename, apiTemp));
-                this.db = getValue(apiTemp, 'i32');
-                return binaryDb;
             };
 
 
@@ -688,7 +680,12 @@ var initialize = new Promise(function (resolve) {
                 FS.createDataFile('/', filename + '.shx', data.shx, true, true);
                 this.shpfiles.push(filename);
                 ret = load_shapefile_ex(this.db, filename, tablename, codeset, srid, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-                //FS.unlink('/' + filename);
+                if (ret === 0) {
+                    FS.unlink('/' + filename + '.shp');
+                    FS.unlink('/' + filename + '.dbf');
+                    FS.unlink('/' + filename + '.shx');
+                    this.handleError(1);
+                }
                 return !!ret;
             };
 
