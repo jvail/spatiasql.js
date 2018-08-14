@@ -16,6 +16,12 @@ export interface IGeoJSONOptions {
     precision?: number;
 }
 export declare function isGeometryBlob(data: Uint8Array): boolean;
+export declare enum GeometryFormat {
+    SpatiaLite = 0,
+    GeoPackage = 1,
+    None = 2
+}
+export declare function geometryFormat(data: Uint8Array): GeometryFormat;
 export declare class Database {
     private worker;
     private jobs;

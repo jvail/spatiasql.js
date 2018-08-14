@@ -7,6 +7,26 @@ function isGeometryBlob(data) {
         view.getUint8(38) === 124);
 }
 exports.isGeometryBlob = isGeometryBlob;
+var GeometryFormat;
+(function (GeometryFormat) {
+    GeometryFormat[GeometryFormat["SpatiaLite"] = 0] = "SpatiaLite";
+    GeometryFormat[GeometryFormat["GeoPackage"] = 1] = "GeoPackage";
+    GeometryFormat[GeometryFormat["None"] = 2] = "None";
+})(GeometryFormat = exports.GeometryFormat || (exports.GeometryFormat = {}));
+function geometryFormat(data) {
+    const view = new DataView(data.buffer);
+    if (view.getUint8(0) === 0 &&
+        (view.getUint8(1) === 0 || view.getUint8(1) === 1) &&
+        view.getUint8(38) === 124) {
+        return GeometryFormat.SpatiaLite;
+    }
+    if (view.getUint16(0).toString(16) === '4750' &&
+        (view.getUint8(2) === 1 || view.getUint8(2) === 0)) {
+        return GeometryFormat.GeoPackage;
+    }
+    return GeometryFormat.None;
+}
+exports.geometryFormat = geometryFormat;
 // async generartors do not work with Uglifyjs
 // class Statement implements IStatement {
 //     constructor(private stmtID: number, private worker: Worker, private jobs: IJob[]) {}
