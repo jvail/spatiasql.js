@@ -6,6 +6,7 @@ var initialize = new Promise(function (resolve) {
         var spatialite_alloc_connection = Module['cwrap']('spatialite_alloc_connection', 'number', ['number']),
             spatialite_init_ex = Module['cwrap']('spatialite_init_ex', 'number', ['number', 'number']),
             spatialite_cleanup_ex = Module['cwrap']('spatialite_cleanup_ex', 'number', ['number']),
+            spatialite_shutdown = Module['cwrap']('spatialite_shutdown', 'void', ['void']);
             load_shapefile_ex = Module['cwrap']('load_shapefile_ex', 'number', ['number', 'string', 'string', 'string', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
 
         var sqlite3_open = Module['cwrap']('sqlite3_open', 'number', ['string', 'number']),
@@ -437,6 +438,7 @@ var initialize = new Promise(function (resolve) {
         })();
 
         Database = (function () {
+
             function Database(data, verbose) {
                 this.shpfiles = [];
                 this.filename = 'dbfile_' + (0xffffffff * Math.random() >>> 0);
@@ -448,6 +450,14 @@ var initialize = new Promise(function (resolve) {
                 this.statements = {};
                 this._cache = spatialite_alloc_connection();
                 spatialite_init_ex(this.db, this._cache, verbose);
+                this.exec('SELECT EnableGpkgAmphibiousMode()');
+                var result = this.exec('SELECT CheckSpatialMetaData()');
+                var checked = result[0].values[0][0];
+                if (checked === 0) {
+                    this.exec('SELECT InitSpatialMetaData(\'NONE\')');
+                    this.exec('SELECT InsertEpsgSrid(4326)');
+                }
+
             }
 
 
@@ -661,6 +671,8 @@ var initialize = new Promise(function (resolve) {
                     FS.unlink('/' + filename + '.dbf');
                     FS.unlink('/' + filename + '.shx');
                 }
+                spatialite_shutdown();
+
                 return this.db = null;
             };
 

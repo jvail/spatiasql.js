@@ -12,7 +12,7 @@ endif
 
 EMCC_FLAGS :=
 EMCC_FLAGS += -s ALLOW_MEMORY_GROWTH=1
-# EMCC_FLAGS += -s TOTAL_MEMORY=268435456
+# EMCC_FLAGS += -s TOTAL_MEMORY=256MB
 EMCC_FLAGS += -s INLINING_LIMIT=50
 EMCC_FLAGS += -s RESERVED_FUNCTION_POINTERS=64
 EMCC_FLAGS += -s RETAIN_COMPILER_SETTINGS=1
@@ -22,6 +22,7 @@ EMCC_FLAGS += -s EXPORTED_FUNCTIONS="[ \
 	_spatialite_alloc_connection, \
 	_spatialite_init_ex, \
 	_spatialite_cleanup_ex, \
+	_spatialite_shutdown, \
 	_load_shapefile_ex, \
 	_malloc, \
 	_free, \
