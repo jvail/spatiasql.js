@@ -139,7 +139,13 @@ initialize.then(function (Database) {
 					var results = [];
 					var precision = data.options && data.options.precision ? data.options.precision : 7;
 					var bbox = data.options && data.options.bbox ? 1 : 0;
-					var stmt = db.prepare('select AsGeoJSON(Transform(:geom, 4326), :precision, :bbox)');
+					// TODO: Not sure how to transform GPB (no spatial_ref_sys table available)
+					var stmt = db.prepare('\
+						SELECT CASE IsValidGPB(:geom)\
+						WHEN 1 THEN AsGeoJSON(GeomFromGPB(:geom), :precision, :bbox)\
+						ELSE AsGeoJSON(Transform(:geom, 4326), :precision, :bbox)\
+						END geom\
+					');
 					data.geoms.forEach(function (geom) {
 						stmt.bind([geom, precision, bbox]);
 						while (stmt.step()) {

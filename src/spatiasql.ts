@@ -43,6 +43,31 @@ export function isGeometryBlob(data: Uint8Array) {
     );
 }
 
+export enum GeometryFormat { SpatiaLite, GeoPackage, None }
+
+export function geometryFormat(data: Uint8Array): GeometryFormat {
+
+    const view = new DataView(data.buffer);
+
+    if (
+        view.getUint8(0) === 0 &&
+        (view.getUint8(1) === 0 || view.getUint8(1) === 1) &&
+        view.getUint8(38) === 124
+    ) {
+        return GeometryFormat.SpatiaLite;
+    }
+
+    if (
+        view.getUint16(0).toString(16) === '4750' &&
+        (view.getUint8(2) === 1 || view.getUint8(2) === 0)
+    ) {
+        return GeometryFormat.GeoPackage;
+    }
+
+    return GeometryFormat.None;
+
+}
+
 interface PostData {
     action: string;
     sql?: string;
@@ -188,7 +213,7 @@ export class Database {
 
     async export(): Promise<Uint8Array> {
         return this.post({ action: 'export' }).then(res => {
-            return new Uint8Array(res);
+            return new Uint8Array(res[0]);
         });
     }
 
