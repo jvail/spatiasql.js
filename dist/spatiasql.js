@@ -124,7 +124,7 @@ class Database {
     }
     async export() {
         return this.post({ action: 'export' }).then(res => {
-            return new Uint8Array(res);
+            return new Uint8Array(res[0]);
         });
     }
     async loadshp(tablename, codeset, srid, shpfiles) {

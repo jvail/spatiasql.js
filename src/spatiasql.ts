@@ -188,7 +188,7 @@ export class Database {
 
     async export(): Promise<Uint8Array> {
         return this.post({ action: 'export' }).then(res => {
-            return new Uint8Array(res);
+            return new Uint8Array(res[0]);
         });
     }
 
