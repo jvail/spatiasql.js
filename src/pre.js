@@ -450,7 +450,6 @@ var initialize = new Promise(function (resolve) {
                 this.statements = {};
                 this._cache = spatialite_alloc_connection();
                 spatialite_init_ex(this.db, this._cache, verbose);
-                this.exec('SELECT EnableGpkgAmphibiousMode()');
                 var result = this.exec('SELECT CheckSpatialMetaData()');
                 var checked = result[0].values[0][0];
                 if (checked === 0) {

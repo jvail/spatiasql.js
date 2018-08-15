@@ -139,7 +139,7 @@ initialize.then(function (Database) {
 					var results = [];
 					var precision = data.options && data.options.precision ? data.options.precision : 7;
 					var bbox = data.options && data.options.bbox ? 1 : 0;
-					var stmt = db.prepare('SELECT AsGeoJSON(Transform(:geom, 4326), :precision, :bbox)');
+					var stmt = db.prepare('SELECT AsGeoJSON(Transform(CastAutomagic(:geom), 4326), :precision, :bbox)');
 					data.geoms.forEach(function (geom) {
 						stmt.bind([geom, precision, bbox]);
 						while (stmt.step()) {
