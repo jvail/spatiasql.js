@@ -6,8 +6,10 @@ PROJ4_VERSION = 5.1.0
 ZLIB_VERSION = 1.2.11
 
 OX = -O2
+WASM = 1
 ifeq ($(DEBUG), 1)
-    OX = -O0
+    OX = -g
+	WASM = 0
 endif
 
 EMCC_FLAGS :=
@@ -144,7 +146,11 @@ spatialite:
 	--enable-geosadvanced=yes \
 	--enable-epsg=no \
 	--enable-mathsql=no \
+	--enable-rttopo=no \
+	--enable-knn=no \
 	--enable-geocallbacks=no \
+	--enable-geosreentrant=no \
+	--enable-geopackage=yes \
 	--enable-freexl=no \
 	--enable-lwgeom=no  \
 	--enable-libxml2=no \
@@ -154,13 +160,13 @@ spatialite:
 
 .PHONY: worker
 worker: src/pre.js src/post-worker.js
-	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=1 \
+	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=$(WASM) \
 	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a \
 	--pre-js src/pre.js --post-js src/post-worker.js -o dist/spatiasql-worker.js;
 
 .PHONY: node
 node: src/pre.js src/post-node.js
-	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=1 \
+	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=$(WASM) \
 	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a \
 	--pre-js src/pre.js --post-js src/post-node.js -o dist/spatiasql-node.js;
 
