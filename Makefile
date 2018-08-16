@@ -4,6 +4,7 @@ SQLITE_VERSION = 3240000
 GEOS_VERSION = 3.6.2
 PROJ4_VERSION = 5.1.0
 ZLIB_VERSION = 1.2.11
+RTTOPO_VERSION = 1.1.0-RC1
 
 OX = -O2
 WASM = 1
@@ -16,7 +17,7 @@ EMCC_FLAGS :=
 EMCC_FLAGS += -s ALLOW_MEMORY_GROWTH=1
 # EMCC_FLAGS += -s TOTAL_MEMORY=256MB
 EMCC_FLAGS += -s INLINING_LIMIT=50
-EMCC_FLAGS += -s RESERVED_FUNCTION_POINTERS=64
+EMCC_FLAGS += -s RESERVED_FUNCTION_POINTERS=256
 EMCC_FLAGS += -s RETAIN_COMPILER_SETTINGS=1
 EMCC_FLAGS += -s DISABLE_EXCEPTION_CATCHING=0
 EMCC_FLAGS += -s SINGLE_FILE=0
@@ -87,7 +88,9 @@ getsrc:
 	wget -nc http://zlib.net/zlib-$(ZLIB_VERSION).tar.gz; \
 	tar -xf zlib-1.2.11.tar.gz; \
 	wget -nc https://www.sqlite.org/2018/sqlite-amalgamation-$(SQLITE_VERSION).zip; \
-	unzip -o sqlite-amalgamation-$(SQLITE_VERSION).zip;
+	unzip -o sqlite-amalgamation-$(SQLITE_VERSION).zip; \
+	wget -nc https://git.osgeo.org/gitea/rttopo/librttopo/archive/librttopo-$(RTTOPO_VERSION).tar.gz; \
+	tar -xf librttopo-$(RTTOPO_VERSION).tar.gz; \
 
 proj4:
 	cd $(TEMP)/proj-$(PROJ4_VERSION); \
@@ -118,6 +121,16 @@ sqlite:
 	EMDEBUG=1 emcc -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_DISABLE_LFS -DLONGDOUBLE_TYPE=double -DSQLITE_THREADSAFE=0 -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS \
 	sqlite3.c -o $(BCDIR)/sqlite.bc;
 
+rttopo:
+	cd $(TEMP)/librttopo; \
+	./autogen.sh; \
+	EMCONFIGURE_JS=1 emconfigure ./configure $(PREFIX) --host=none \
+	--with-geosconfig="$(BCDIR)/bin/geos-config" \
+	CPPFLAGS="-I$(BCDIR)/include/" \
+	LDFLAGS="-L$(BCDIR)/lib/"; \
+	EMDEBUG=1 emmake make; \
+	find $(TEMP)/librttopo -type f | grep '\.o\b' | EMCC_DEBUG=1 xargs emcc -o $(BCDIR)/rttopo.bc;
+
 spatialite:
 	cd $(TEMP)/libspatialite-$(SPATIALITE_VERSION); \
 	cp -n configure configure.backup; \
@@ -137,7 +150,7 @@ spatialite:
 	 -e 's/^return freexl_open ();/\/\/return freexl_open ();/' \
 	 -e 's/^return GEOSCoveredBy ();/\/\/return GEOSCoveredBy ();/' \
 	 -e 's/^return GEOSDelaunayTriangulation ();/\/\/return GEOSDelaunayTriangulation ();/' \
-	 -e 's/^return lwgeom_set_handlers ();/\/\/return lwgeom_set_handlers ();/' configure ; \
+	 -e 's/^return rtt_AddLineNoFace ();/\/\/return rtt_AddLineNoFace ();/' configure ; \
 	EMCONFIGURE_JS=1 emconfigure ./configure $(PREFIX) --host=none \
 	CFLAGS="-ULOADABLE_EXTENSION" \
 	CPPFLAGS="-I$(BCDIR)/include/" \
@@ -146,13 +159,12 @@ spatialite:
 	--enable-geosadvanced=yes \
 	--enable-epsg=no \
 	--enable-mathsql=no \
-	--enable-rttopo=no \
+	--enable-rttopo=yes \
 	--enable-knn=no \
-	--enable-geocallbacks=no \
-	--enable-geosreentrant=no \
+	--enable-geocallbacks=yes \
+	--enable-geosreentrant=yes \
 	--enable-geopackage=yes \
 	--enable-freexl=no \
-	--enable-lwgeom=no  \
 	--enable-libxml2=no \
 	--enable-gcov=no \
 	--enable-examples=no ; \
@@ -161,13 +173,13 @@ spatialite:
 .PHONY: worker
 worker: src/pre.js src/post-worker.js
 	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=$(WASM) \
-	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a \
+	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/rttopo.bc $(BCDIR)/lib/libspatialite.a \
 	--pre-js src/pre.js --post-js src/post-worker.js -o dist/spatiasql-worker.js;
 
 .PHONY: node
 node: src/pre.js src/post-node.js
 	EMDEBUG=1 emcc --memory-init-file 0 $(OX) $(EMCC_FLAGS) -s WASM=$(WASM) \
-	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/lib/libspatialite.a \
+	$(BCDIR)/sqlite.bc $(BCDIR)/zlib.bc $(BCDIR)/proj.bc $(BCDIR)/geos_c.bc $(BCDIR)/geos.bc $(BCDIR)/rttopo.bc $(BCDIR)/lib/libspatialite.a \
 	--pre-js src/pre.js --post-js src/post-node.js -o dist/spatiasql-node.js;
 
 clean:
