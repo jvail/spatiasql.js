@@ -1,29 +1,8 @@
 // https://www.gaia-gis.it/fossil/libspatialite/wiki?name=toponet-start
 
-/*
---SELECT CreateTopology('topo', 3003, 0, 0);
---TopoGeo_FromGeoTable
---SELECT TopoGeo_FromGeoTableNoFace('topo', NULL, 'province', NULL, 32);
-
--- if TopoGeo_FromGeoTableNoFace selected
---SELECT TopoGeo_Polygonize('topo');
-
---SELECT Count(*) FROM topo_node;
---SELECT ST_ValidateTopoGeo('topo');
---SELECT TopoGeo_UpdateSeeds('topo');
---SELECT TopoGeo_ToGeoTableGeneralize('topo', NULL, 'province', NULL, 'out_province_500m', 500);
-*/
-
-
 const fs = require('fs');
 const spatiasql = require('../dist/spatiasql-node');
 const netname = 'testnetz';
-function get(stmt) {
-    while (stmt.step()) {
-        console.log(stmt.getAsObject());
-    }
-    stmt.free();
-}
 
 spatiasql.then(Database => {
 
@@ -110,11 +89,10 @@ spatiasql.then(Database => {
                 ST_GeomFromText('LINESTRING(180 30, 180 0)', 4326));
         `);
 
-        get(db.prepare(`SELECT ST_ValidSpatialNet(:name)`, [netname]));
+        res = db.exec(`SELECT ST_ValidSpatialNet(\'${netname}\')`);
+        console.log('ST_ValidSpatialNet ' + (res[0].values[0][0] === null));
     } catch (err) {
         console.log(err);
     }
-
-
 
 });
