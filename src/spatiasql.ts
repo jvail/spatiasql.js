@@ -98,7 +98,7 @@ interface PostData {
 
 //     async bind(params: any[]) {
 //         return new Promise((resolve, reject) => {
-//             this.jobs.push({ resolve, reject });
+//             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
 //                 action: 'bind',
 //                 params: params,
@@ -110,7 +110,7 @@ interface PostData {
 //     async *step(): AsyncIterableIterator<boolean> {
 //         while (true) {
 //             let row = await new Promise((resolve, reject) => {
-//                 this.jobs.push({ resolve, reject });
+//                 this.addJob({ resolve, reject });
 //                 this.worker.postMessage({
 //                     action: 'step',
 //                     stmtID: this.stmtID
@@ -126,7 +126,7 @@ interface PostData {
 
 //     async get() {
 //         return new Promise((resolve, reject) => {
-//             this.jobs.push({ resolve, reject });
+//             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
 //                 action: 'get',
 //                 stmtID: this.stmtID
@@ -136,7 +136,7 @@ interface PostData {
 
 //     async getAsObject() {
 //         return new Promise((resolve, reject) => {
-//             this.jobs.push({ resolve, reject });
+//             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
 //                 action: 'getAsObject',
 //                 stmtID: this.stmtID
@@ -146,7 +146,7 @@ interface PostData {
 
 //     async free() {
 //         return new Promise((resolve, reject) => {
-//             this.jobs.push({ resolve, reject });
+//             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
 //                 action: 'free',
 //                 stmtID: this.stmtID
@@ -160,6 +160,9 @@ export class Database {
     private jobs: IJob[] = [];
     private initialized: Promise<boolean>|boolean = false;
     private opened: Promise<boolean>|boolean = false;
+    private ons = {
+        jobQueueChange: (no: number) => {}
+    };
 
     constructor(buffer?: ArrayBuffer) {
         this.open(buffer).catch((err) => {
@@ -169,6 +172,18 @@ export class Database {
 
     busy(): boolean {
         return !!this.jobs.length;
+    }
+
+    on(name: string, fn: Function) {
+        if (this.ons[name]) {
+            this.ons[name] = fn;
+        }
+    }
+
+    off(name: string) {
+        if (this.ons[name]) {
+            this.ons[name] = () => {};
+        }
     }
 
     async exec(sql: string, params?: any[], userData?: any) : Promise<[IResult[], any]> {
@@ -202,10 +217,11 @@ export class Database {
         if (!this.worker) {
             this.worker = new Worker('lib/spatiasql-worker.js');
             this.initialized = new Promise((resolve, reject) => {
-                this.jobs.push({ resolve, reject });
-            }).then(() => this.initialized = true);
+                this.addJob({ resolve, reject });
+            }).then(() => true);
             this.worker.onmessage = (evt) => {
                 const job = this.jobs.shift();
+                this.ons.jobQueueChange(this.jobs.length);
                 if (evt.data.error) {
                     job.reject([evt.data.error, job.userData]);
                 } else {
@@ -213,9 +229,9 @@ export class Database {
                 }
             };
         }
-        return this.post({ action: 'open', buffer }).then(res => {
-            this.opened = res;
-            return res;
+        return this.post({ action: 'open', buffer }).then(opened => {
+            this.opened = opened;
+            return opened;
         });
     }
 
@@ -243,18 +259,23 @@ export class Database {
         return this.post({ action: 'geomFromGeoJSON', jsons: jsons }).then(res => res);
     }
 
+    private addJob(job: IJob) {
+        this.jobs.push(job);
+        this.ons.jobQueueChange(this.jobs.length);
+    }
+
     private async post(data: PostData, userData?: any) : Promise<any> {
         if (this.initialized !== true) await this.initialized;
         if (data.action !== 'open') await this.opened;
         if (data.action === 'loadshp') {
             return new Promise((resolve, reject) => {
-                this.jobs.push({ resolve, reject });
+                this.addJob({ resolve, reject });
                 this.worker.postMessage(data, [data.shpfiles.shp, data.shpfiles.dbf, data.shpfiles.shx]);
             });
 
         } else {
             return new Promise((resolve, reject ) => {
-                this.jobs.push({ resolve, reject, userData });
+                this.addJob({ resolve, reject, userData });
                 this.worker.postMessage(data);
             });
         }

@@ -27,8 +27,11 @@ export declare class Database {
     private jobs;
     private initialized;
     private opened;
+    private ons;
     constructor(buffer?: ArrayBuffer);
     busy(): boolean;
+    on(name: string, fn: Function): void;
+    off(name: string): void;
     exec(sql: string, params?: any[], userData?: any): Promise<[IResult[], any]>;
     close(terminateWorker?: boolean): Promise<boolean>;
     open(buffer?: ArrayBuffer): Promise<boolean>;
@@ -36,5 +39,6 @@ export declare class Database {
     loadshp(tablename: string, codeset: string, srid: number, shpfiles: IShpFiles): Promise<boolean>;
     asGeoJSON(geoms: Uint8Array[], options?: IGeoJSONOptions): Promise<any>;
     geomFromGeoJSON(jsons: JSON[]): Promise<any>;
+    private addJob;
     private post;
 }
