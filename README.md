@@ -57,3 +57,11 @@ if (loaded) {
 }
 
 ```
+
+## angular, vue & webpack
+
+The worker script (& wasm) file is expected to live in a 'lib' folder and may be copied with e.g. CopyWebpackPlugin.
+See vue and angular examples:
+
+* angular: https://github.com/jvail/spatialitebrowser
+* vue: https://github.com/jvail/spatiasql-vue-test
