@@ -33,18 +33,10 @@ export interface IGeoJSONOptions {
     precision?: number;
 }
 
-export function isGeometryBlob(data: Uint8Array) {
-
-    const view = new DataView(data.buffer);
-    return (
-        view.getUint8(0) === 0 &&
-        (view.getUint8(1) === 0 || view.getUint8(1) === 1) &&
-        view.getUint8(38) === 124
-    );
-}
-
 export enum GeometryFormat { SpatiaLite, GeoPackage, None }
 
+
+// TODO: remove DataView
 export function geometryFormat(data: Uint8Array): GeometryFormat {
 
     const view = new DataView(data.buffer);
@@ -65,6 +57,22 @@ export function geometryFormat(data: Uint8Array): GeometryFormat {
     }
 
     return GeometryFormat.None;
+
+}
+
+// TODO: remove DataView
+export function srid(data: Uint8Array) {
+
+    const view = new DataView(data.buffer);
+    if (
+        view.getUint8(0) === 0 &&
+        (view.getUint8(1) === 0 || view.getUint8(1) === 1) &&
+        view.getUint8(38) === 124
+    ) {
+       return view.getUint32(2, !!view.getUint8(1));
+    }
+
+    return -1;
 
 }
 
