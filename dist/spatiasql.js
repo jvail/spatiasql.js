@@ -35,7 +35,7 @@ exports.srid = srid;
 // async generartors do not work with Uglifyjs
 // class Statement implements IStatement {
 //     constructor(private stmtID: number, private worker: Worker, private jobs: IJob[]) {}
-//     async bind(params: any[]) {
+//     bind(params: any[]) {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -61,7 +61,7 @@ exports.srid = srid;
 //             }
 //         }
 //     }
-//     async get() {
+//     get() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -70,7 +70,7 @@ exports.srid = srid;
 //             })
 //         });
 //     }
-//     async getAsObject() {
+//     getAsObject() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -79,7 +79,7 @@ exports.srid = srid;
 //             })
 //         });
 //     }
-//     async free() {
+//     free() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -115,7 +115,7 @@ class Database {
             this.ons[name] = () => { };
         }
     }
-    async exec(sql, params, userData) {
+    exec(sql, params, userData) {
         return this.post({ action: 'exec', sql, params }, userData);
     }
     // async generartors do not work with Uglifyjs
@@ -128,7 +128,7 @@ class Database {
     //             return new Statement(res.stmtID, this.worker, this.jobs);
     //         });
     // }
-    async close(terminateWorker = false) {
+    close(terminateWorker = false) {
         return this.post({ action: 'close' }).then(res => {
             this.opened = false;
             if (terminateWorker) {
@@ -139,7 +139,7 @@ class Database {
             return res;
         });
     }
-    async open(buffer) {
+    open(buffer) {
         if (!this.worker) {
             this.worker = new Worker('lib/spatiasql-worker.js');
             this.initialized = new Promise((resolve, reject) => {
@@ -161,12 +161,12 @@ class Database {
             return opened;
         });
     }
-    async export() {
+    export() {
         return this.post({ action: 'export' }).then(res => {
             return new Uint8Array(res[0]);
         });
     }
-    async loadshp(tablename, codeset, srid, shpfiles) {
+    loadshp(tablename, codeset, srid, shpfiles) {
         return this.post({
             action: 'loadshp',
             tablename,
@@ -175,10 +175,10 @@ class Database {
             shpfiles
         }).then(res => res);
     }
-    async asGeoJSON(geoms, options) {
+    asGeoJSON(geoms, options) {
         return this.post({ action: 'asGeoJSON', geoms, options }).then(res => res);
     }
-    async geomFromGeoJSON(jsons) {
+    geomFromGeoJSON(jsons) {
         return this.post({ action: 'geomFromGeoJSON', jsons: jsons }).then(res => res);
     }
     addJob(job) {

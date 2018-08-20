@@ -96,7 +96,7 @@ interface PostData {
 
 //     constructor(private stmtID: number, private worker: Worker, private jobs: IJob[]) {}
 
-//     async bind(params: any[]) {
+//     bind(params: any[]) {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -124,7 +124,7 @@ interface PostData {
 //         }
 //     }
 
-//     async get() {
+//     get() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -134,7 +134,7 @@ interface PostData {
 //         });
 //     }
 
-//     async getAsObject() {
+//     getAsObject() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -144,7 +144,7 @@ interface PostData {
 //         });
 //     }
 
-//     async free() {
+//     free() {
 //         return new Promise((resolve, reject) => {
 //             this.addJob({ resolve, reject });
 //             this.worker.postMessage({
@@ -186,7 +186,7 @@ export class Database {
         }
     }
 
-    async exec(sql: string, params?: any[], userData?: any) : Promise<[IResult[], any]> {
+    exec(sql: string, params?: any[], userData?: any) : Promise<[IResult[], any]> {
         return this.post({ action: 'exec', sql, params }, userData);
     }
 
@@ -201,7 +201,7 @@ export class Database {
     //         });
     // }
 
-    async close(terminateWorker: boolean = false) : Promise<boolean> {
+    close(terminateWorker: boolean = false) : Promise<boolean> {
         return this.post({ action: 'close' }).then(res => {
             this.opened = false;
             if (terminateWorker) {
@@ -213,7 +213,7 @@ export class Database {
         });
     }
 
-    async open(buffer?: ArrayBuffer) : Promise<boolean> {
+    open(buffer?: ArrayBuffer) : Promise<boolean> {
         if (!this.worker) {
             this.worker = new Worker('lib/spatiasql-worker.js');
             this.initialized = new Promise((resolve, reject) => {
@@ -235,13 +235,13 @@ export class Database {
         });
     }
 
-    async export(): Promise<Uint8Array> {
+    export(): Promise<Uint8Array> {
         return this.post({ action: 'export' }).then(res => {
             return new Uint8Array(res[0]);
         });
     }
 
-    async loadshp(tablename: string, codeset: string, srid: number, shpfiles: IShpFiles) : Promise<boolean> {
+    loadshp(tablename: string, codeset: string, srid: number, shpfiles: IShpFiles) : Promise<boolean> {
         return this.post({
                 action: 'loadshp',
                 tablename,
@@ -251,11 +251,11 @@ export class Database {
             }).then(res => res);
     }
 
-    async asGeoJSON(geoms: Uint8Array[], options?: IGeoJSONOptions) {
+    asGeoJSON(geoms: Uint8Array[], options?: IGeoJSONOptions) {
         return this.post({ action: 'asGeoJSON', geoms, options }).then(res => res);
     }
 
-    async geomFromGeoJSON(jsons: JSON[]) {
+    geomFromGeoJSON(jsons: JSON[]) {
         return this.post({ action: 'geomFromGeoJSON', jsons: jsons }).then(res => res);
     }
 
