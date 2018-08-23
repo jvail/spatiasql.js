@@ -4,7 +4,7 @@ var initialize = new Promise(function (resolve) {
 
     Module['onRuntimeInitialized'] = function () {
         var spatialite_alloc_connection = Module['cwrap']('spatialite_alloc_connection', 'number', ['number']),
-            spatialite_init_ex = Module['cwrap']('spatialite_init_ex', 'number', ['number', 'number']),
+            spatialite_init_ex = Module['cwrap']('spatialite_init_ex', 'number', ['number', 'number', 'number']),
             spatialite_cleanup_ex = Module['cwrap']('spatialite_cleanup_ex', 'number', ['number']),
             spatialite_shutdown = Module['cwrap']('spatialite_shutdown', 'void', ['void']);
             load_shapefile_ex = Module['cwrap']('load_shapefile_ex', 'number', ['number', 'string', 'string', 'string', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number']);
@@ -439,7 +439,7 @@ var initialize = new Promise(function (resolve) {
 
         Database = (function () {
 
-            function Database(data, verbose) {
+            function Database(data, options) {
                 this.shpfiles = [];
                 this.filename = 'dbfile_' + (0xffffffff * Math.random() >>> 0);
                 if (data != null) {
@@ -449,12 +449,14 @@ var initialize = new Promise(function (resolve) {
                 this.db = getValue(apiTemp, 'i32');
                 this.statements = {};
                 this._cache = spatialite_alloc_connection();
+                var verbose = options ? options.verbose : 0;
                 spatialite_init_ex(this.db, this._cache, verbose);
-                var result = this.exec('SELECT CheckSpatialMetaData()');
-                var checked = result[0].values[0][0];
-                if (checked === 0) {
-                    this.exec('SELECT InitSpatialMetaData(\'NONE\')');
-                    this.exec('SELECT InsertEpsgSrid(4326)');
+                if (options && options.initSpatialMetaData) {
+                    var result = this.exec('SELECT CheckSpatialMetaData()');
+                    var checked = result[0].values[0][0];
+                    if (checked === 0) {
+                        this.exec('SELECT InitSpatialMetaData(' + options.initSpatialMetaData + ')');
+                    }
                 }
 
             }

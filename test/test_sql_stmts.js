@@ -2,11 +2,6 @@ const fs = require('fs');
 const assert = require('assert');
 const spatiasql = require('../dist/spatiasql-node');
 
-// function isHex(h) {
-//   var a = parseInt(h, 16);
-//   return (a.toString(16) === h.toLowerCase()) || (a === 0 && !h.match(/[^0]*/));
-// }
-
 spatiasql.then(Database => {
 
   try {
@@ -24,9 +19,7 @@ function test(Database) {
   var noCases = 0;
   var caseFailed = [];
 
-  var db = new Database();
-  var db_memory = new Database();
-  db_memory.exec("SELECT InitSpatialMetaData()");
+  var db;
 
   var testcases = fs.readdirSync('test/sql_stmt_tests');
   for (var i = 0, is = testcases.length; i < is; i++) {
@@ -36,19 +29,26 @@ function test(Database) {
     var testcase = fs.readFileSync('test/sql_stmt_tests/' + testcases[i], { encoding: 'utf-8' });
     if (testcase.length > 0) {
       noCases++;
-      // console.log('\n\nfile: ' + testcases[i]);
+
       var lines = testcase.split('\n');
       var title = lines[0];
-
-      if (db_name !== ':memory:')
-        db.close();
+      var db_name_pre = db_name;
       db_name = lines[1].substr(0, (lines[1].indexOf('#') < 0 ? lines[1].length : lines[1].indexOf('#'))).trim();
-      if (db_name.indexOf('NEW:memory:') > -1) {
+
+      if (db_name.indexOf(':memory:') === 0) {
+        if (db_name_pre != ':memory:') {
+          var db = new Database();
+          db.exec("SELECT InitSpatialMetaData(1)");
+        }
+      } else if (db_name.indexOf('NEW:memory:') > -1) {
+        if (db) {
+          db.close();
+        }
         db = new Database();
-        db.exec("SELECT InitSpatialMetaData()");
-      } else if (db_name === ':memory:') {
-        db = db_memory;
       } else {
+        if (db) {
+          db.close();
+        }
         db = new Database(fs.readFileSync('test/' + db_name));
       }
 
@@ -60,7 +60,7 @@ function test(Database) {
       console.log(i + ' ' + title);
       // console.log('testcase: ' + title);
       // console.log('db: ' + db_name);
-      // console.log('res: ', JSON.stringify(res, null, 2));
+      // console.log(res[0].values[0]);
 
       for (var r = 0; r < res[0].values.length; r++) {
         for (var c = 0; c < res[0].values[r].length; c++) {
@@ -84,10 +84,10 @@ function test(Database) {
             assert.ok(found === expected ||
               (!isNaN(parseFloat(found)) && (parseFloat(found).toFixed(4) === parseFloat(expected).toFixed(4))), title);
           } catch (err) {
+            console.log('\n\nfile: ' + testcases[i]);
             console.log('expected:\n ' + expected + ' ' + expect[idx]);
             console.log('found:\n ' + found + ' ' +  res[0].values[r][c]);
             console.log('lenTocompare:\n ' + lenTocompare);
-            console.log(err);
             if (caseFailed.indexOf(testcases[i]) < 0) {
               noFailed++;
               caseFailed.push(testcases[i])
@@ -101,10 +101,7 @@ function test(Database) {
 
   console.log('\n' + noFailed + ' of ' + noCases + ' tests failed\n\nFailed tests:\n' + caseFailed.join('\n'));
 
-  if (db_memory.db)
-    db_memory.close();
-  if (db.db)
-    db.close();
+  process.exit(noFailed ? 1 : 0);
 
 }
 
