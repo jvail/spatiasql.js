@@ -156,7 +156,8 @@ class Database {
                 }
             };
         }
-        return this.post({ action: 'open', buffer }).then(opened => {
+        let options = { verbose: false, initSpatialMetaData: 'WGS84' };
+        return this.post({ action: 'open', buffer, options }).then(opened => {
             this.opened = opened;
             return opened;
         });

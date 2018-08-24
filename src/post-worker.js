@@ -2,11 +2,11 @@ initialize.then(function (Database) {
 	var db = null;
 	var stmts = [];
 	var counter = 0;
-	var createDb = function (data) {
+	var createDb = function (data, options) {
 		if (db != null) {
 			db.close();
 		}
-		return db = new Database(data);
+		return db = new Database(data, options);
 	};
 	var getStatement = function(stmtID) {
 		return stmts.find(function (stmt) { return stmtID === stmt.id }).stmt;
@@ -16,7 +16,7 @@ initialize.then(function (Database) {
 		var data = event['data'];
 		switch (data != null ? data['action'] : void 0) {
 			case 'open':
-				createDb((data.buffer ? new Uint8Array(data.buffer) : undefined));
+				createDb((data.buffer ? new Uint8Array(data.buffer) : undefined), data.options);
 				return postMessage(true);
 			case 'close': // FIXME: error after db.close() in spatialite.ts
 				if (db != null) {

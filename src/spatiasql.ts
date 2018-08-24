@@ -76,7 +76,7 @@ export function srid(data: Uint8Array) {
 
 }
 
-interface PostData {
+interface IPostData {
     action: string;
     sql?: string;
     stmtID?: number;
@@ -229,7 +229,8 @@ export class Database {
                 }
             };
         }
-        return this.post({ action: 'open', buffer }).then(opened => {
+        let options = { verbose: false, initSpatialMetaData: 'WGS84' };
+        return this.post(<IPostData>{ action: 'open', buffer, options }).then(opened => {
             this.opened = opened;
             return opened;
         });
@@ -264,7 +265,7 @@ export class Database {
         this.ons.jobQueueChange(this.jobs.length);
     }
 
-    private async post(data: PostData, userData?: any) : Promise<any> {
+    private async post(data: IPostData, userData?: any) : Promise<any> {
         if (this.initialized !== true) await this.initialized;
         if (data.action !== 'open') await this.opened;
         if (data.action === 'loadshp') {

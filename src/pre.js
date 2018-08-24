@@ -455,7 +455,7 @@ var initialize = new Promise(function (resolve) {
                     var result = this.exec('SELECT CheckSpatialMetaData()');
                     var checked = result[0].values[0][0];
                     if (checked === 0) {
-                        this.exec('SELECT InitSpatialMetaData(' + options.initSpatialMetaData + ')');
+                        this.exec('SELECT InitSpatialMetaData(1, \'' + options.initSpatialMetaData + '\')');
                     }
                 }
 
