@@ -1,5 +1,7 @@
 # spatiasql.js
 
+# This project is not maintained anymore. There is a new project with updated dependencies a new API (no sql.js anymore): https://github.com/jvail/spl.js
+
 JavaScript (emscripten) port of [SpatiaLite 5.0.0-beta](https://www.gaia-gis.it/fossil/libspatialite/index) (including SQLite 3.24.0, proj 5.1.0, geos 3.6.2)
 
 [![Build Status](https://travis-ci.org/jvail/spatiasql.js.svg?branch=master)](https://travis-ci.org/jvail/spatiasql.js)
